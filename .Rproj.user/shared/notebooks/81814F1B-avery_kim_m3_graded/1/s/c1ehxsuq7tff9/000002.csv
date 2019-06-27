@@ -1,0 +1,8 @@
+"0","ggplot(data_2017Clean, aes(x = FamilyZ, y = HappyZ)) + "
+"0","  geom_point()+"
+"0","  stat_smooth(method = ""lm"", col = ""red"")+"
+"0","  labs("
+"0","    x = ""Family Score (Z-score)"","
+"0","    y = ""Happiness Score (Z-score)"", "
+"0","    title = ""Family One of Three Largest Contributors to Happiness"""
+"0","  ) "

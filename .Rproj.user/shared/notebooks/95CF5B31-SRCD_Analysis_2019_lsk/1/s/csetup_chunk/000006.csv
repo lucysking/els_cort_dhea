@@ -1,0 +1,8 @@
+"0","library(here)"
+"0","library(corrplot)"
+"0","library(foreign)"
+"0","library(tidyverse)"
+"0","library(modelr)"
+"0","#master <- read_csv(here('Master_file_2019-03-07.csv'))"
+"0","master_file <- ""~/Dropbox/SRCD_2019/data/master_file_without_LENA_20190308.csv"""
+"0","lena_file <- ""~/Dropbox/SRCD_2019/data/lena_cleaned_wf_20190308.csv"""

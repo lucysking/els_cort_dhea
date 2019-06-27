@@ -1,0 +1,6 @@
+"0","opts_chunk$set(echo = FALSE,message=FALSE,warning=FALSE,eval = TRUE,results='TRUE',fig.show=TRUE, fig.width = 14)
+d=read.csv('PSC.csv', header= T, na.strings = c('')); 
+"
+"2","cannot open file 'PSC.csv': No such file or directory"
+"2","Error in file(file, ""rt"") : cannot open the connection
+"

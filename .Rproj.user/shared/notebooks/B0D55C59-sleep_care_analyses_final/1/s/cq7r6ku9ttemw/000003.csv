@@ -1,0 +1,10 @@
+"0","```r
+```r
+data_wf %>% 
+  group_by(Condition) %>% 
+  summarise_at(
+    vars(mom_age),
+    funs(mean, sd), na.rm = TRUE
+  )
+```
+```"

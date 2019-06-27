@@ -1,0 +1,88 @@
+"0","```r
+free_play_wf <-
+  free_play_lf %>% 
+  gather(key1, value, sens_fin:negmood_fin) %>% 
+  unite(key2, Episode, key1, sep = \"_\") %>% 
+  spread(key2, value) %>% 
+  group_by(ID) %>% 
+  mutate(
+    sens_M = mean(
+      c(
+        `1_sens_fin`, 
+        `2_sens_fin`, 
+        `3_sens_fin`, 
+        `4_sens_fin`, 
+        `5_sens_fin`
+      ),
+      na.rm = TRUE
+    ),
+    intrus_M = mean(
+      c(
+        `1_intrus_fin`, 
+        `2_intrus_fin`, 
+        `3_intrus_fin`, 
+        `4_intrus_fin`, 
+        `5_intrus_fin`
+      ),
+      na.rm = TRUE
+    ),
+    posreg_M = mean(
+      c(
+        `1_posreg_fin`, 
+        `2_posreg_fin`, 
+        `3_posreg_fin`, 
+        `4_posreg_fin`, 
+        `5_posreg_fin`
+      ),
+      na.rm = TRUE
+    ),
+    stim_M = mean(
+      c(
+        `1_stim_fin`, 
+        `2_stim_fin`, 
+        `3_stim_fin`, 
+        `4_stim_fin`, 
+        `5_stim_fin`),
+      na.rm = TRUE
+    ),
+    detach_M = mean(
+      c(
+        `1_detach_fin`, 
+        `2_detach_fin`, 
+        `3_detach_fin`, 
+        `4_detach_fin`, 
+        `5_detach_fin`),
+      na.rm = TRUE
+    ),
+    negreg_M = mean(
+      c(
+        `1_negreg_fin`, 
+        `2_negreg_fin`, 
+        `3_negreg_fin`, 
+        `4_negreg_fin`, 
+        `5_negreg_fin`
+      ),
+      na.rm = TRUE
+    ),
+    posmood_M = mean(
+      c(
+        `1_posmood_fin`, 
+        `2_posmood_fin`, 
+        `3_posmood_fin`, 
+        `4_posmood_fin`, 
+        `5_posmood_fin`),
+      na.rm = TRUE
+    ),
+    negmood_M = mean(
+      c(
+        `1_negmood_fin`, 
+        `2_negmood_fin`, 
+        `3_negmood_fin`, 
+        `4_negmood_fin`, 
+        `5_negmood_fin`
+      ),
+      na.rm = TRUE
+    )
+  ) %>% 
+  ungroup()
+```"

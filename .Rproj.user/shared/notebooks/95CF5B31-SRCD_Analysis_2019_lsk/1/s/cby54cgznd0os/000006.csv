@@ -1,0 +1,2 @@
+"0","#Plot 3: Relationship between CVC Depend and R IP Sulcus Cluster"
+"0","ggplot(master, aes(x=cvc_depend_D1, y=R_IP_Sulcus)) + geom_point() + geom_smooth(method=lm)"

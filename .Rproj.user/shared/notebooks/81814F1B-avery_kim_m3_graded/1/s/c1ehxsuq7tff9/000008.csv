@@ -1,0 +1,8 @@
+"0","ggplot(data_2017Clean, aes(x = GenerosityZ, y = HappyZ)) + "
+"0","  geom_point()+"
+"0","  stat_smooth(method = ""lm"", col = ""red"")+"
+"0","  labs("
+"0","    x = ""Generosity Score (Z-score)"","
+"0","    y = ""Happiness Score (Z-score)"", "
+"0","    title =  ""Generosity Not Significant Contributor to Happiness"""
+"0","  ) "

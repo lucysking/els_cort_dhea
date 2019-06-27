@@ -1,0 +1,14 @@
+"0","```r
+```r
+data_wf <- 
+  data_wf %>% 
+  mutate(
+    income_clean = if_else(income == 6, NA_real_, income)
+  )
+data_lf <- 
+  data_lf %>% 
+  mutate(
+    income_clean = if_else(income == 6, NA_real_, income)
+  )
+```
+```"

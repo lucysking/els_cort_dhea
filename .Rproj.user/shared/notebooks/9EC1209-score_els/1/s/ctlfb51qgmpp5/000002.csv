@@ -1,0 +1,40 @@
+"0","```r
+#Libraries
+library(tidyverse)
+library(haven)
+library(modelr)
+#Parameters
+els_t1_file <- 
+  \"~/Desktop/ELS/stress_data/data/Best_ELS T1 Integrated Stress Interview_Panel Ratings_Copy 1._20180711.sav\"
+els_t2_file <- 
+  \"~/Desktop/ELS/stress_data/data/ELS T2 Integrated Stress Interview_Panel Ratings_Copy 1 USE_1._20180711.sav\"
+lca_class_t1_file <- 
+  \"~/Desktop/ELS/stress_data/data/els_t1_lca_class.csv\"
+## Functions
+spread_els_data <- function(data, rating) {
+  
+  rating <- enquo(rating)
+  
+  data %>% 
+  select(
+    ELS_ID,
+    event_domain_re,
+    !! rating
+  ) %>% 
+  group_by(ELS_ID, event_domain_re) %>% 
+  filter(
+    !! rating == max(
+      !! rating, na.rm = TRUE
+    )
+  ) %>% 
+  distinct(
+    event_domain_re, 
+    !! rating
+  ) %>% 
+  gather(key1, value, !! rating) %>% 
+  unite(key2, event_domain_re, key1, sep = \"_\") %>% 
+  spread(key2, value) %>% 
+  ungroup()
+  
+}
+```"

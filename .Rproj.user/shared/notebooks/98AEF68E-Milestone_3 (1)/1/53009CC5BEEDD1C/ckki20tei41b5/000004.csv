@@ -1,0 +1,14 @@
+"0","my_data <- read_csv(data_file)"
+"2","Parsed with column specification:
+cols(
+  Year = [32mcol_double()[39m,
+  City = [31mcol_character()[39m,
+  Sport = [31mcol_character()[39m,
+  Discipline = [31mcol_character()[39m,
+  Athlete = [31mcol_character()[39m,
+  Country = [31mcol_character()[39m,
+  Gender = [31mcol_character()[39m,
+  Event = [31mcol_character()[39m,
+  Medal = [31mcol_character()[39m
+)
+"

@@ -1,0 +1,6 @@
+"0","```r
+els_t1_obj <- 
+  spread_els_data(els_t1, panel_objective_decision_re)
+els_t1_subj <- 
+  spread_els_data(els_t1, child_subjective_rating)
+```"

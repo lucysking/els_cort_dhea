@@ -1,0 +1,615 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Libraries
+library(tidyverse)
+library(lubridate)
+library(haven)
+library(corrr)
+library(readxl)
+
+source("~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/winsorize.R")
+
+#Files
+hormone_info_file <- "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/ELS Hormone Master Sheet.xlsx"
+sex_file <- "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/els_t1_biological_sex.csv"
+
+cortisol_files  <-
+  tibble(
+    path = 
+      list.files(
+        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/cortisol",
+        pattern = "^Raw_",
+        full.names = TRUE
+      )
+  )
+
+dhea_files  <-
+  tibble(
+    path = 
+      list.files(
+        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/DHEA",
+        pattern = "^Raw_",
+        full.names = TRUE
+      )
+  )
+
+testosterone_files  <-
+  tibble(
+    path = 
+      list.files(
+        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/testosterone",
+        pattern = "^Raw_",
+        full.names = TRUE
+      )
+  )
+
+estradiol_files  <-
+  tibble(
+    path = 
+      list.files(
+        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/estradiol",
+        pattern = "^Raw_",
+        full.names = TRUE
+      )
+  )
+
+progesterone_files  <-
+  tibble(
+    path = 
+      list.files(
+        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/progesterone",
+        pattern = "^Raw_",
+        full.names = TRUE
+      )
+  )
+```
+
+# Read in data
+
+## hormone information
+```{r}
+hormone_info <-
+  read_xlsx(
+    hormone_info_file, 
+    sheet = "T1",
+    na = c("999","888")
+  ) %>% 
+  mutate(
+    Assay_ID = as.numeric(Assay_ID),
+    Corticosteroid = as.numeric(Corticosteroid)
+  ) %>% 
+  bind_rows(
+    read_xlsx(
+      hormone_info_file, 
+      sheet = "TK1",
+      na = c("999","888")
+    )
+  ) %>% 
+  bind_rows(
+    read_xlsx(
+      hormone_info_file, 
+      sheet = "Tmid",
+      na = c("999","888")
+    ) %>% 
+      mutate(Assay_ID = as.numeric(Assay_ID))
+  ) %>% 
+  bind_rows(
+    read_xlsx(
+      hormone_info_file, 
+      sheet = "T2",
+      na = c("999","888")
+    )
+  ) %>% 
+  bind_rows(
+    read_xlsx(
+      hormone_info_file, 
+      sheet = "TK3",
+      na = c("999","888")
+    )
+  ) %>% 
+  bind_rows(
+    read_xlsx(
+      hormone_info_file, 
+      sheet = "T3",
+      na = c("999","888")
+    )
+  ) %>% 
+  mutate(
+    timepoint = str_extract(Timepoint_ID, "T\\d|TK\\d|Tmid")
+  ) %>% 
+  rename_at(
+    vars(-ELS_ID),
+    str_to_lower
+  ) %>% 
+  mutate(
+    # convert hormone collection time to hours from 12AM
+    time_collection = hour(time_collection) + minute(time_collection) / 60,
+    ELS_ID = as.numeric(ELS_ID),
+    # create 1/0 variable for medication
+    medication_binary = if_else(
+      str_detect(medication, "None"), 
+      0, 1
+    )
+  ) %>% 
+  select(
+    ELS_ID,
+    timepoint,
+    everything(),
+    -timepoint_id
+  )
+
+```
+
+## cortisol data 
+```{r}
+cortisol_data <-
+  cortisol_files %>% 
+  mutate(
+    data = map(
+      path, 
+      read_xlsx, 
+      range = "A7:I500",
+      sheet = "Final Report",
+      col_types = c(
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      )
+    )
+  ) %>% 
+  unnest(data)  
+  
+  
+cortisol <-
+  cortisol_data %>% 
+  filter(!is.na(`Sample ID`), !is.na(`ELS ID`)) %>% 
+  mutate(
+    measure = "cortisol"
+  ) %>% 
+  select(
+    path,
+    ELS_ID = `ELS ID`,
+    measure,
+    assay_id = `Sample ID`,
+    timepoint = Timepoint, 
+    rep1 = `Rep 1`,
+    rep2 = `Rep 2`,
+    mean = `Mean (µg/dL)`
+  ) 
+
+```
+
+## DHEA data 
+```{r}
+dhea_data <-
+  dhea_files %>% 
+  mutate(
+    data = map(
+      path, 
+      read_xlsx, 
+      range = "A7:G500",
+      sheet = "Final Report",
+      col_types = c(
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      )
+    )
+  ) %>% 
+  unnest(data)  
+  
+  
+dhea <-
+  dhea_data %>% 
+  mutate(
+    measure = "dhea",
+    ELS_ID = as.numeric(
+      case_when(
+        !is.na(`ELS ID`) ~ `ELS ID`
+      )
+    ),
+    ELS_ID = round(ELS_ID, 2)
+  ) %>% 
+  filter(!is.na(`Sample ID`), !is.na(ELS_ID)) %>% 
+  select(
+    path,
+    ELS_ID,
+    measure,
+    assay_id = `Sample ID`,
+    timepoint = Timepoint,
+    rep1 = `Rep 1`,
+    rep2 = `Rep 2`,
+    mean = `Mean (pg/mL)`
+  ) %>% 
+  mutate(
+    timepoint = if_else(
+      is.na(timepoint),
+      str_extract(ELS_ID, " Tmid"), timepoint
+    ),
+    ELS_ID = str_replace(ELS_ID, " Tmid", "")
+    ) 
+```
+
+## Testosterone data 
+```{r}
+testosterone_data <-
+  testosterone_files %>% 
+  mutate(
+    data = map(
+      path, 
+      read_xlsx, 
+      range = "A7:G500",
+      sheet = "Final Report",
+      col_types = c(
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      )
+    )
+  ) %>% 
+  unnest(data)  
+  
+  
+testos <-
+  testosterone_data %>% 
+  mutate(
+    measure = "testosterone",
+    ELS_ID = as.numeric(
+      case_when(
+        !is.na(`ELS ID`) ~ `ELS ID`
+      )
+    ),
+    ELS_ID = round(ELS_ID, 2)
+  ) %>% 
+  filter(!is.na(`Sample ID`), !is.na(ELS_ID)) %>% 
+  select(
+    path,
+    ELS_ID,
+    measure,
+    assay_id = `Sample ID`,
+    timepoint = Timepoint,
+    rep1 = `Rep 1`,
+    rep2 = `Rep 2`,
+    mean = `Mean (pg/mL)`
+  ) %>% 
+  mutate(
+    timepoint = if_else(
+      is.na(timepoint),
+      str_extract(ELS_ID, " Tmid"), timepoint
+    ),
+    timepoint = if_else(
+      timepoint == "TMID",
+      "Tmid", timepoint
+    ),
+    ELS_ID = str_replace(ELS_ID, " Tmid", "")
+  ) 
+```
+
+## Estradiol data 
+```{r}
+estradiol_data <-
+  estradiol_files %>% 
+  mutate(
+    data = map(
+      path, 
+      read_xlsx, 
+      range = "A7:G500",
+      sheet = "Final Report",
+      col_types = c(
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      )
+    )
+  ) %>% 
+  unnest(data)  
+  
+  
+estrad <-
+  estradiol_data %>% 
+  mutate(
+    measure = "estradiol",
+    ELS_ID = as.numeric(
+      case_when(
+        !is.na(`ELS ID`) ~ `ELS ID`
+      )
+    ),
+    ELS_ID = round(ELS_ID, 2)
+  ) %>% 
+  filter(!is.na(`Sample ID`), !is.na(ELS_ID)) %>% 
+  select(
+    path,
+    ELS_ID,
+    measure,
+    assay_id = `Sample ID`,
+    timepoint = Timepoint,
+    rep1 = `Rep 1`,
+    rep2 = `Rep 2`,
+    mean = `Mean (pg/mL)`
+  ) %>% 
+  mutate(
+    timepoint = if_else(
+      is.na(timepoint),
+      str_extract(ELS_ID, " Tmid"), timepoint
+    ),
+    timepoint = if_else(
+      timepoint == "TMID",
+      "Tmid", timepoint
+    ),
+    ELS_ID = str_replace(ELS_ID, " Tmid", "")
+  )
+```
+
+## Progesterone data 
+```{r}
+progesterone_data <-
+  progesterone_files %>% 
+  mutate(
+    data = map(
+      path, 
+      read_xlsx, 
+      range = "A7:G500",
+      sheet = "Final Report",
+      col_types = c(
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      )
+    )
+  ) %>% 
+  unnest(data)  
+  
+  
+progest <-
+  progesterone_data %>% 
+  mutate(
+    measure = "progesterone",
+    ELS_ID = as.numeric(
+      case_when(
+        !is.na(`ELS ID`) ~ `ELS ID`
+      )
+    ),
+    ELS_ID = round(ELS_ID, 2)
+  ) %>% 
+  filter(!is.na(`Sample ID`), !is.na(ELS_ID)) %>% 
+  select(
+    path,
+    ELS_ID,
+    measure,
+    assay_id = `Sample ID`,
+    timepoint = Timepoint,
+    rep1 = `Rep 1`,
+    rep2 = `Rep 2`,
+    mean = `Mean (pg/mL)`
+  ) %>% 
+  mutate(
+    timepoint = if_else(
+      is.na(timepoint),
+      str_extract(ELS_ID, " Tmid"), timepoint
+    ),
+    timepoint = if_else(
+      timepoint == "TMID",
+      "Tmid", timepoint
+    ),
+    ELS_ID = str_replace(ELS_ID, " Tmid", "")
+  ) 
+```
+
+## Join all hormones
+```{r}
+hormones_all <-
+  testos %>% 
+  bind_rows(dhea) %>% 
+  bind_rows(estrad) %>% 
+  bind_rows(progest) %>% 
+  bind_rows(cortisol) %>% 
+  mutate(
+    comment = case_when(
+      mean == "qns" | rep1 == "qns" | rep2 == "qns" ~ "qns",
+      mean == "ND" | rep1 == "ND" | rep2 == "ND" ~ "none detected",
+      str_detect(mean, "\\*") | str_detect(rep1, "\\*") | str_detect(rep2, "\\*")  ~ "mean/rep1/rep2 below lower limit or interference",
+      TRUE ~ NA_character_
+    ),
+    timepoint = if_else(
+      timepoint == "TMID" | timepoint == "Tmid",
+      "Tmid", timepoint
+    )
+  ) %>% 
+  # coercing hormone values to be numeric; will result in NAs for those
+  # marked as "qns", "ND", "*" (below lower limit of sensitivity), or ** (interference likely)
+  # those marked as above are noted in comments variables
+  mutate_at(
+    vars(
+      ELS_ID, assay_id, rep1:mean
+    ),
+    as.numeric
+  ) %>% 
+  filter(ELS_ID != 7) #removing participant who withdrew
+```
+
+
+## Join with hormone master sheet
+```{r}
+hormones <-
+  hormones_all %>% 
+  left_join(hormone_info, by = c("ELS_ID", "assay_id", "timepoint")) %>% 
+  mutate(
+    #create new variable to denote session type
+    session_type = case_when(
+      str_detect(ELS_ID, "\\.2") == TRUE ~ "second session",
+      str_detect(ELS_ID, "\\.5") == TRUE ~ "session after braces",
+      TRUE ~ "first session"
+    ),
+    #coerce ELS_ID to integer
+    ELS_ID = as.integer(ELS_ID)
+  ) %>% 
+  select(
+    path,
+    ELS_ID,
+    session_type, 
+    everything()
+  )
+```
+
+
+## Join with biological sex 
+```{r}
+hormones <-
+  hormones %>% 
+  left_join(
+    read_csv(sex_file),
+    by = "ELS_ID"
+  ) %>% 
+  mutate(
+    male = as.factor(if_else(T1_Child_Sex == 1, 1, 0))
+  ) %>% 
+  select(-T1_Child_Sex)
+
+```
+
+# Winsorize hormone data within sex and timepoint to +/- 3SD value
+```{r}
+hormones_clean <-
+  hormones %>% 
+  group_by(timepoint, male, measure) %>% 
+  mutate_at(
+    vars(
+      rep1:mean
+      ),
+    list("win" = ~winsorize), product = 3
+  ) %>% 
+  ungroup()
+```
+
+#Log transform
+```{r}
+hormones_clean <-
+  hormones_clean %>% 
+  group_by(timepoint, male, measure) %>% 
+  mutate_at(
+    vars(rep1_win:mean_win),
+    funs(
+      if_else(. == 0, NA_real_, .)
+    )
+  ) %>% 
+  mutate_at(
+    vars(rep1_win:mean_win),
+    funs("log" = log)
+  ) 
+```
+
+# Visualize distributions
+```{r}
+hormones_clean %>% 
+  filter(measure == "cortisol") %>% 
+  ggplot(aes(mean_win_log, fill = male)) +
+  geom_density(alpha = 1/2) +
+  facet_grid(.~ timepoint)
+
+hormones_clean %>% 
+  filter(measure == "dhea") %>% 
+  ggplot(aes(mean_win_log, fill = male)) +
+  geom_density(alpha = 1/2) +
+  facet_grid(.~ timepoint)
+
+hormones_clean %>% 
+  filter(measure == "testosterone") %>% 
+  ggplot(aes(mean_win_log, fill = male)) +
+  geom_density(alpha = 1/2) +
+  facet_grid(.~ timepoint)
+
+hormones_clean %>% 
+  filter(measure == "estradiol") %>% 
+  ggplot(aes(mean_win_log)) +
+  geom_density(alpha = 1/2) +
+  facet_grid(.~ timepoint)
+
+hormones_clean %>% 
+  filter(measure == "progesterone") %>% 
+  ggplot(aes(mean_win_log)) +
+  geom_density(alpha = 1/2) +
+  facet_grid(.~ timepoint)
+```
+
+# Select relevant columns, spread measure column, export
+```{r}
+hormones_final <- 
+  hormones_clean %>% 
+  mutate(
+    birth_control = if_else(
+      timepoint == "T1" & is.na(birth_control), 
+      0, birth_control
+    )
+  ) %>% 
+  select(
+    ELS_ID,
+    session_type,
+    measure,
+    timepoint,
+    male,
+    rep1:mean,
+    rep1_clean = rep1_win_log,
+    rep2_clean = rep2_win_log,
+    mean_clean = mean_win_log,
+    comment,
+    scan_date:birth_control,
+    medication_binary
+  ) %>% 
+  gather(
+    key, 
+    value, 
+    rep1, 
+    rep2,
+    mean,
+    rep1_clean,
+    rep2_clean,
+    mean_clean,
+    comment
+  ) %>% 
+  unite("measure_key", measure, key) %>% 
+  spread(measure_key, value) %>% 
+  arrange(male, ELS_ID, timepoint)
+
+```
+
+```{r}
+write_csv(
+  hormones_final, 
+  "~/Desktop/ELS/cort_dhea/data/data_final/hormones_final_20190506.csv"
+) 
+
+hormones_final %>% 
+  filter(timepoint == "T1") %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean)) %>% 
+  ungroup() %>% 
+  summarise(n_distinct(ELS_ID))
+
+
+```
+

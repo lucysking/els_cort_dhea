@@ -1,0 +1,29 @@
+"0","##T1"
+"0","tanner_t1 <-"
+"0","  read_sav(tanner_t1_file) %>% "
+"0","  rename_all("
+"0","    funs(str_replace(., "".T1"", """"))"
+"0","  ) %>% "
+"0","  rename(timepoint = Timepoint) %>% "
+"0","  select("
+"0","    -Subject_ID_Timepoint,"
+"0","    -Session_Type"
+"0","  ) %>% "
+"0","  mutate("
+"0","    early_puberty = "
+"0","      (tanner_female_pubhair < 4 & tanner_female_breasts < 4) |"
+"0","      (tanner_male_pubhair < 4 & tanner_male_testes < 4)"
+"0","  )"
+"2","funs() is soft deprecated as of dplyr 0.8.0
+please use list() instead
+
+# Before:
+funs(name = f(.)
+
+# After: 
+list(name = ~f(.))
+[90mThis warning is displayed once per session.[39m"
+"0","    "
+"0","tanner_t1 %>% "
+"0","  distinct(ELS_ID, early_puberty) %>% "
+"0","  count(early_puberty)"

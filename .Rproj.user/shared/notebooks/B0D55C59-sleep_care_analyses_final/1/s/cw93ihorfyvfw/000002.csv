@@ -1,0 +1,207 @@
+"0","```r
+```r
+#actigraphy with actigraphy
+cor.test(data_wf$wake_time_ac, data_wf$wake_bouts_ac)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_ac and data_wf$wake_bouts_ac
+t = 8.2291, df = 53, p-value = 4.827e-11
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.6036119 0.8461405
+sample estimates:
+      cor 
+0.7489714 
+"
+"0","```r
+```r
+cor.test(data_wf$wake_time_ac, data_wf$sleep_time_ac)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_ac and data_wf$sleep_time_ac
+t = -1.1274, df = 53, p-value = 0.2646
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.4020150  0.1170078
+sample estimates:
+       cor 
+-0.1530401 
+"
+"0","```r
+```r
+cor.test(data_wf$wake_bouts_ac, data_wf$sleep_time_ac)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_bouts_ac and data_wf$sleep_time_ac
+t = 1.0912, df = 53, p-value = 0.2801
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.1218553  0.3978839
+sample estimates:
+     cor 
+0.148234 
+"
+"0","```r
+```r
+#subjective with subjective
+cor.test(data_wf$wake_time_sd, data_wf$wake_bouts_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_sd and data_wf$wake_bouts_sd
+t = 4.6271, df = 56, p-value = 2.24e-05
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.3096779 0.6904170
+sample estimates:
+      cor 
+0.5259072 
+"
+"0","```r
+```r
+cor.test(data_wf$wake_time_sd, data_wf$sleep_time_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_sd and data_wf$sleep_time_sd
+t = -5.4156, df = 54, p-value = 1.447e-06
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.7406466 -0.3914122
+sample estimates:
+       cor 
+-0.5932644 
+"
+"0","```r
+```r
+cor.test(data_wf$wake_time_sd, data_wf$quality_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_sd and data_wf$quality_sd
+t = -3.8444, df = 56, p-value = 0.0003112
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.6397454 -0.2252498
+sample estimates:
+       cor 
+-0.4569592 
+"
+"0","```r
+```r
+#actigraphy with subjective
+cor.test(data_wf$wake_time_ac, data_wf$wake_time_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_time_ac and data_wf$wake_time_sd
+t = 1.7917, df = 48, p-value = 0.07948
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.03006923  0.49427521
+sample estimates:
+     cor 
+0.250374 
+"
+"0","```r
+```r
+cor.test(data_wf$wake_bouts_ac, data_wf$wake_bouts_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$wake_bouts_ac and data_wf$wake_bouts_sd
+t = 1.7097, df = 47, p-value = 0.09391
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.04208328  0.48984296
+sample estimates:
+      cor 
+0.2419768 
+"
+"0","```r
+```r
+cor.test(data_wf$sleep_time_ac, data_wf$sleep_time_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$sleep_time_ac and data_wf$sleep_time_sd
+t = 1.8392, df = 45, p-value = 0.07248
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.02461617  0.51265909
+sample estimates:
+      cor 
+0.2644198 
+"
+"0","```r
+```r
+cor.test(data_wf$sleep_time_ac, data_wf$wake_time_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$sleep_time_ac and data_wf$wake_time_sd
+t = 0.92035, df = 48, p-value = 0.362
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.1522436  0.3955343
+sample estimates:
+      cor 
+0.1316845 
+"
+"0","```r
+```r
+cor.test(data_wf$sleep_time_ac, data_wf$wake_bouts_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$sleep_time_ac and data_wf$wake_bouts_sd
+t = 0.79041, df = 47, p-value = 0.4333
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.1722078  0.3833841
+sample estimates:
+      cor 
+0.1145351 
+"
+"0","```r
+```r
+cor.test(data_wf$sleep_time_ac, data_wf$quality_sd)
+```
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  data_wf$sleep_time_ac and data_wf$quality_sd
+t = 1.123, df = 47, p-value = 0.2671
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.1252335  0.4235969
+sample estimates:
+      cor 
+0.1616558 
+"

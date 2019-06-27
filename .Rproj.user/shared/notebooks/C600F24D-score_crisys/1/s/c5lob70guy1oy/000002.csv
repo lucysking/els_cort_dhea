@@ -1,0 +1,7 @@
+"0","```r
+crisys_wf <-
+  crisys %>% 
+  gather(variable, value, crisys_total:crisys_win) %>% 
+  unite(temp, timepoint, variable) %>% 
+  spread(temp, value)
+```"

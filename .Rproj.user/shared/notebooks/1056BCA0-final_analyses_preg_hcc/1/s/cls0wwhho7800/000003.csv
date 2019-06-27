@@ -1,0 +1,164 @@
+"0","```r
+t.test(hcc_wf$sum_sev_childhood ~ hcc_wf$pregnancy_stress)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$sum_sev_childhood by hcc_wf$pregnancy_stress
+t = -1.481, df = 16.558, p-value = 0.1574
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -13.738230   2.419183
+sample estimates:
+ mean in group no mean in group yes 
+         7.607143         13.266667 
+"
+"0","```r
+t.test(hcc_wf$sum_sev_childhood ~ hcc_wf$primiparous)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$sum_sev_childhood by hcc_wf$primiparous
+t = -0.25035, df = 41.51, p-value = 0.8035
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -5.287208  4.120541
+sample estimates:
+mean in group 0 mean in group 1 
+       8.666667        9.250000 
+"
+"0","```r
+chisq.test(hcc_wf$primiparous, hcc_wf$pregnancy_stress)
+```"
+"1","Chi-squared approximation may be incorrect
+"
+"1","
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  hcc_wf$primiparous and hcc_wf$pregnancy_stress
+X-squared = 0.97747, df = 1, p-value = 0.3228
+"
+"0","```r
+t.test(hcc_wf$weeks_preg_T1 ~ hcc_wf$pregnancy_stress)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$weeks_preg_T1 by hcc_wf$pregnancy_stress
+t = 0.21436, df = 36.575, p-value = 0.8315
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -2.785261  3.444030
+sample estimates:
+ mean in group no mean in group yes 
+         24.77700          24.44762 
+"
+"0","```r
+t.test(hcc_wf$weeks_preg_T2 ~ hcc_wf$pregnancy_stress)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$weeks_preg_T2 by hcc_wf$pregnancy_stress
+t = 0.18876, df = 5.2626, p-value = 0.8573
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.847717  2.145336
+sample estimates:
+ mean in group no mean in group yes 
+         45.57738          45.42857 
+"
+"0","```r
+cor.test(hcc_wf$weeks_preg_T1, hcc_wf$sum_sev_childhood)
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  hcc_wf$weeks_preg_T1 and hcc_wf$sum_sev_childhood
+t = -1.1019, df = 54, p-value = 0.2754
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.3957666  0.1192540
+sample estimates:
+       cor 
+-0.1482958 
+"
+"0","```r
+cor.test(hcc_wf$weeks_preg_T2, hcc_wf$sum_sev_childhood)
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  hcc_wf$weeks_preg_T2 and hcc_wf$sum_sev_childhood
+t = -1.2573, df = 27, p-value = 0.2194
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.5539385  0.1437137
+sample estimates:
+       cor 
+-0.2351793 
+"
+"0","```r
+cor.test(hcc_wf$bmi_preg, hcc_wf$sum_sev_childhood)
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  hcc_wf$bmi_preg and hcc_wf$sum_sev_childhood
+t = 2.0788, df = 31, p-value = 0.046
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.007353771 0.618783610
+sample estimates:
+      cor 
+0.3497797 
+"
+"0","```r
+t.test(hcc_wf$bmi_preg ~ hcc_wf$pregnancy_stress)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$bmi_preg by hcc_wf$pregnancy_stress
+t = -1.5479, df = 11.618, p-value = 0.1484
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -9.838009  1.682908
+sample estimates:
+ mean in group no mean in group yes 
+         24.28769          28.36524 
+"
+"0","```r
+##missingness
+hcc_wf <-
+  hcc_wf %>% 
+  mutate(
+    missing = if_else(
+      !is.na(weeks_preg_T1) & !is.na(weeks_preg_T2),
+      0, 1
+    )
+  )
+t.test(hcc_wf$sum_sev_childhood ~ hcc_wf$missing)
+```"
+"1","
+	Welch Two Sample t-test
+
+data:  hcc_wf$sum_sev_childhood by hcc_wf$missing
+t = 0.27837, df = 47.752, p-value = 0.7819
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -4.499306  5.945119
+sample estimates:
+mean in group 0 mean in group 1 
+       9.464286        8.741379 
+"
+"0","```r
+chisq.test(hcc_wf$missing, hcc_wf$pregnancy_stress)
+```"
+"1","
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  hcc_wf$missing and hcc_wf$pregnancy_stress
+X-squared = 1.2638, df = 1, p-value = 0.2609
+"

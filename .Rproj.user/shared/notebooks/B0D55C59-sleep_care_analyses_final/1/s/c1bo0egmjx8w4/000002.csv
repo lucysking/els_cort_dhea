@@ -1,0 +1,21 @@
+"0","```r
+```r
+##Extract intercepts and sloepes from models 
+ml_SC_summary <- summary(ml_SC)
+ml_SC_intercept <- ml_SC_summary$coefficients[1]
+ml_SC_slope <- ml_SC_summary$coefficients[2]
+ml_SC_lo_summary <- summary(ml_SC_lo)
+ml_SC_lo_intercept <- ml_SC_lo_summary$coefficients[1]
+ml_SC_lo_slope <- ml_SC_lo_summary$coefficients[2]
+ml_SC_hi_summary <- summary(ml_SC_hi)
+ml_SC_hi_intercept <- ml_SC_hi_summary$coefficients[1]
+ml_SC_hi_slope <- ml_SC_hi_summary$coefficients[2]
+simple_slopes_SC <- 
+  tribble(
+    ~effect, ~intercept, ~slope,
+    \X Lower\, ml_SC_lo_intercept, ml_SC_lo_slope,
+    \Y Medium\, ml_SC_intercept, ml_SC_slope,
+    \Z Higher\, ml_SC_hi_intercept, ml_SC_hi_slope
+  )
+```
+```"

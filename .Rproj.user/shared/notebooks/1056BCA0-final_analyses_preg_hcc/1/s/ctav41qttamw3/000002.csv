@@ -1,0 +1,27 @@
+"0","```r
+hc_time_wf <-
+  hc %>% 
+  select(
+    ID, 
+    timepoint,
+    hc_log,
+    segment,
+    seg_week
+  ) %>% 
+  filter(
+    (segment == 1 & timepoint == \"pregnancy\") |
+    (segment == 5 & timepoint == \"newborn\")
+  ) %>% 
+  select(-segment) %>% 
+  gather(variable, value, hc_log:seg_week) %>% 
+  unite(temp, variable, timepoint) %>% 
+  spread(temp, value) %>% 
+  mutate(
+    overlap = if_else(
+      (seg_week_newborn - seg_week_pregnancy) < 2, 
+      \"yes\", \"no\"
+    )
+  )
+hc_time_wf %>% 
+  count(overlap)
+```"

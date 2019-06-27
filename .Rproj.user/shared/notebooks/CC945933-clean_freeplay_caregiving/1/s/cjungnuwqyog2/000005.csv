@@ -1,0 +1,18 @@
+"1","
+ Number of subjects = 14     Number of Judges =  2
+"
+"0","```r
+#cognitive stimulation
+stimM <- 
+  free_play_means %>%
+  select(
+    stim_M_ER,
+    stim_M_LK
+  ) %>% 
+  na.omit(stimM)
+ICC(stimM)
+```"
+"1","Call: ICC(x = stimM)
+
+Intraclass correlation coefficients 
+"

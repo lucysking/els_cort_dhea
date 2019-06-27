@@ -1,0 +1,59 @@
+"0","```r
+set.seed(123)
+#confint.merMod(hc_childsev2_hi, method = \"boot\", boot.type = \"perc\")
+##visualize
+hcc_trim <-
+  hcc_trim %>% 
+  mutate(
+    sev_child_grp = if_else(
+      sum_sev_childhood_win > sum_sev_childhood_win_50,
+      \"high\", \"low\"
+    )
+  )
+hcc_trim %>% 
+  filter(!is.na(sev_child_grp)) %>% 
+  ggplot(
+    aes(
+      seg_week, 
+      hcc_resid, 
+      color = fct_reorder(sev_child_grp, sum_sev_childhood),
+      fill = fct_reorder(sev_child_grp, sum_sev_childhood)
+    )
+  ) +
+  ylim(-1.5, 1.5) +
+  geom_smooth(
+    method = \"lm\", 
+    formula = y ~ poly(x,2), 
+    se = TRUE,
+    size = 4
+  ) +
+  scale_x_continuous(breaks = seq.int(0, 40, 5)) +
+  scale_color_manual(
+    name = \"Childhood stress severity\",
+    labels = c(\"Lower\", \"Higher\"),
+    values = c(\"blue\", \"red\")
+  ) +
+  scale_fill_manual(
+    name = \"Childhood stress severity\",
+    labels = c(\"Lower\", \"Higher\"),
+    values = c(\"blue\", \"red\")
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = \"bottom\",
+    legend.title = element_text(size = 32),
+    legend.text = element_text(size = 26),
+    axis.title = element_text(size = 38),
+    axis.text = element_text(size = 32),
+    aspect.ratio = .75
+  ) +
+  labs(
+    x = \"Week of pregnancy\",
+    y = \"residual log(HCC) (pg/mg)\"
+  )
+ggsave(
+  \"~/Desktop/BABIES/preg_hair_cortisol/preg_hair_cort_sync/plots/childsev_hcc.png\",
+  width = 10,
+  height = 10
+  )
+```"

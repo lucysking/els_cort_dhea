@@ -1,0 +1,57 @@
+"0","```r
+```r
+ml_SC_lo <- lmer(
+  sens_fin ~ 
+    episode_re * continuity_ac_lo + 
+    Condition + 
+    site + 
+    (1|ID), 
+  REML = FALSE,
+  data = data_lf
+  )
+summary(ml_SC_lo)
+```
+```"
+"1","Linear mixed model fit by maximum likelihood . t-tests use Satterthwaite's  method
+ [lmerModLmerTest]
+Formula: sens_fin ~ episode_re * continuity_ac_lo + Condition + site +  
+    (1 | ID)
+   Data: data_lf
+
+     AIC      BIC   logLik deviance df.resid 
+   623.3    652.1   -303.6    607.3      264 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.7885 -0.6391 -0.0402  0.6107  3.3774 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ ID       (Intercept) 0.6793   0.8242  
+ Residual             0.3363   0.5799  
+Number of obs: 272, groups:  ID, 55
+
+Fixed effects:
+                             Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)                   3.86289    0.17944  75.85003  21.528  < 2e-16 ***
+episode_re                   -0.12378    0.03508 217.12133  -3.528 0.000511 ***
+continuity_ac_lo             -0.01490    0.13065  74.78935  -0.114 0.909520    
+Condition1                    0.04357    0.11704  55.07028   0.372 0.711143    
+site                         -0.47547    0.34583  55.11582  -1.375 0.174738    
+episode_re:continuity_ac_lo   0.05822    0.02505 217.14530   2.324 0.021043 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) epsd_r cntn__ Cndtn1 site  
+episode_re  -0.390                            
+contnty_c_l -0.687  0.269                     
+Condition1  -0.042 -0.001  0.081              
+site         0.034  0.001  0.195  0.023       
+epsd_r:cn__  0.274 -0.700 -0.381 -0.001  0.003
+"
+"0","```r
+```r
+std_beta(ml_SC_lo)
+```
+```"

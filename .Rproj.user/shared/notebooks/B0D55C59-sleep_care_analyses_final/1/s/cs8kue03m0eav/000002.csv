@@ -1,0 +1,16 @@
+"0","```r
+ml_ISI <- lmer(
+  sens_fin ~ 
+    episode_re * isi_cent + 
+    Condition + 
+    site + 
+    (1|ID), 
+  REML = FALSE,
+  data = data_lf
+  )
+
+summary(ml_ISI)
+std_beta(ml_ISI)
+
+glimpse(data_lf)
+```"

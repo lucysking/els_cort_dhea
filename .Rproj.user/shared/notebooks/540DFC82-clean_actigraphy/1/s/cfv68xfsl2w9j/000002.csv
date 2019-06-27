@@ -1,0 +1,7 @@
+"0","```r
+actigraphy_wf %>% 
+  summarise_at(
+    vars(wake_time_ac, wake_bouts_ac, sleep_time_ac, n_days_ac),
+    funs(mean, sd), na.rm = TRUE
+  )
+```"

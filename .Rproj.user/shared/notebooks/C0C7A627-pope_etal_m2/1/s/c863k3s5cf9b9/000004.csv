@@ -1,0 +1,6 @@
+"0","finaldata %>% "
+"0","  "
+"0","  ggplot(aes(x = fct_reorder(state, avg_hatecrimes_per_100k_fbi, desc = TRUE), y = avg_hatecrimes_per_100k_fbi)) +"
+"0","  geom_col() + "
+"0","  coord_flip() +"
+"0","  labs(y= ""Average annual hate crimes per 100,000 population, FBI"", x= ""State"") "

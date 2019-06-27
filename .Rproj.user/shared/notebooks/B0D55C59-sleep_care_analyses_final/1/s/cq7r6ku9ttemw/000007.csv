@@ -1,0 +1,10 @@
+"0","```r
+```r
+##income
+data_wf %>% 
+  count(income) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```"

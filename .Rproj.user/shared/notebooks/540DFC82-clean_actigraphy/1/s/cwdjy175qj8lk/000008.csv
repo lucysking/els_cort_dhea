@@ -1,0 +1,5 @@
+"0","```r
+ggplot(actigraphy_wf, aes(x = sleep_time_ac)) +
+  geom_histogram(bins = 30, position = \"dodge\", fill = \"gray\", color = \"black\") +
+  theme_bw()
+```"

@@ -1,0 +1,17 @@
+"0","```r
+#sensitivity
+sens <- 
+  free_play %>%
+  select(
+    Sens_ER,
+    Sens_LK
+  ) %>% 
+  na.omit()
+ICC(sens)
+```"
+"1","singular fit
+"
+"1","Call: ICC(x = sens)
+
+Intraclass correlation coefficients 
+"

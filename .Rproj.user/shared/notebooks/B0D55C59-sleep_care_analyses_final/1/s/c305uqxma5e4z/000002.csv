@@ -1,0 +1,34 @@
+"0","```r
+isi_all <- 
+  questionnaires %>% 
+  select(
+    ID, 
+    ISI_total
+  ) %>% 
+  left_join(
+    free_play_wf %>% 
+      select(
+        ID,
+        sens_M
+      ),
+    by = \"ID\"
+  ) %>% 
+  mutate(
+    included = if_else(
+      !is.na(sens_M),
+      1, 0
+    )
+  )
+
+isi_all %>% 
+  filter(!is.na(ISI_total)) %>% 
+  count(included)
+
+isi_all %>% 
+  group_by(included) %>% 
+  summarise(
+    mean(ISI_total, na.rm = TRUE)
+  )
+
+t.test(isi_all$ISI_total ~ isi_all$included)
+```"

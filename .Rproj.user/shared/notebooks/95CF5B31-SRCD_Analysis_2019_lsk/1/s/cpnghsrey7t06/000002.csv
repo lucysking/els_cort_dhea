@@ -1,0 +1,5 @@
+"0","#Corrplot to examine initial associations"
+"0","vars <- c('age', 'age_D1', 'awc_depend_D1', 'ctc_depend_D1','cvc_depend_D1','awc_total_D1','ctc_total_D1','cvc_total_D1','awc_daily_rate_D1', 'ctc_daily_rate_D1','cvc_daily_rate_D1', 'R_C_Sulcus','R_Cerebellum','R_PST_Gyrus','R_IP_Sulcus')"
+"0","test <- master[vars]"
+"0","M <- cor(test, use=""pairwise.complete.obs"")"
+"0","corrplot(M, tl.col = ""black"")"

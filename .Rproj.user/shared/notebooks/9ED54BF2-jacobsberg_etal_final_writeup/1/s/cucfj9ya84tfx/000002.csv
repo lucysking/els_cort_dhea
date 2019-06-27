@@ -1,0 +1,7 @@
+"0","data_project <- data_project %>%"
+"0","  select(-City) %>%"
+"0","  select(-Sport) %>%"
+"0","  select(-Athlete) %>%"
+"0","  select(-Discipline) %>%"
+"0","  select(-Gender) %>%"
+"0","  select(-Event)"

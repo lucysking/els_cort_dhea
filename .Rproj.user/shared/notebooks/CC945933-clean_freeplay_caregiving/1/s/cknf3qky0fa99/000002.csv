@@ -1,0 +1,14 @@
+"0","```r
+free_play <-
+  readxl::read_excel(free_play_file, sheet = \"data\")
+```"
+"1","
+-
+/
+                                                                                  
+"
+"1","New names:
+* `` -> `..15`
+* `` -> `..25`
+* `` -> `..35`
+"

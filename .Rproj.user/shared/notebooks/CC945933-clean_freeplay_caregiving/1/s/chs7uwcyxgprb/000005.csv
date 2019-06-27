@@ -1,0 +1,18 @@
+"0","```r
+#instrusiveness
+intrus_fin <- free_play_wf %>%
+  select(
+    `1_intrus_fin`,
+    `2_intrus_fin`,
+    `3_intrus_fin`,
+    `4_intrus_fin`,
+    `5_intrus_fin`
+  )
+psych::alpha(intrus_fin)
+```"
+"1","
+Reliability analysis   
+Call: psych::alpha(x = intrus_fin)
+
+ 
+"

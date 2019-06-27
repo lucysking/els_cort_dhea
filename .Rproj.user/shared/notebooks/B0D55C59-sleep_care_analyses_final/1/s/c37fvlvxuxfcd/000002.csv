@@ -1,0 +1,76 @@
+"0","```r
+```r
+factor_names = c(
+  \Factor 1:\nSubjective sleep disturbance\, 
+  \Factor 2:\nObjective sleep continuity\
+  )
+loadings <-
+  EFA_sleep_2$loadings[] %>% 
+  data.frame() %>% 
+  rownames_to_column(\measure\) %>% 
+  gather(factor, loading, -measure) %>%  
+  mutate(factor = as.character(factor(factor, labels = factor_names))) 
+  
+# get fa.sort() order
+order <- 
+  loadings %>%
+  group_by(measure) %>%
+  top_n(1, abs(loading)) %>%
+  ungroup() %>%
+  arrange(desc(factor), abs(loading)) %>%
+  mutate(order = 1:length(levels(factor(loadings$measure)))) %>%
+  select(measure, order)
+  
+# get percent shared variance explained
+shared_var <- EFA_sleep_2$Vaccounted %>%
+  data.frame() %>%
+  rownames_to_column(\stat\) %>%
+  filter(stat == \Proportion Var\) %>%
+  select(-stat) %>%
+  gather(factor, var) %>%
+  mutate(factor = as.character(factor(factor, labels = factor_names))) %>%
+  mutate(var = paste0(factor, \\n(\, round(var, 2)*100, \% var.)\))
+  # make plot
+loadings_plot_data <- 
+  loadings %>% 
+  left_join(order, by = \measure\) %>%
+  left_join(shared_var, by = \factor\) %>%
+  mutate(
+    measure = recode(
+    measure,
+    \sleep_time_sd\ = \Subjective TST\,
+    \wake_time_sd\ = \Subjective WASO\,
+    \quality_sd\ = \Perceived quality\,
+    \wake_bouts_sd\ = \Subjective awakenings\,
+    \wake_time_ac\ = \Objective WASO\,
+    \wake_bouts_ac\ = \Objective arousals\
+    )
+  ) 
+loadings_plot_data %>% 
+  ggplot(
+    aes(
+      x = var, 
+      y = reorder(measure, order), 
+      fill = loading,
+      label = round(loading, 2)
+    )
+  ) +
+  geom_tile(color = \black\) +
+  geom_text(size = 7, color = \black\) +
+  scale_fill_distiller(
+    limits = c(-1, 1), 
+    palette = \RdYlBu\,
+    guide = guide_colorbar(barheight = 20)
+  ) +
+  scale_x_discrete(position = \top\) +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 14),
+    axis.title = element_blank(), 
+    axis.text.y = element_text(size = 18),
+    axis.text.x = element_text(size = 17)
+  )
+ggsave(\~/Desktop/BABIES/manber_sleep/loadings_plot.png\, height = 7, width = 10.5)
+```
+```"

@@ -1,0 +1,61 @@
+"0","```r
+cor.test(hc_time_overlap$hc_log_newborn, hc_time_overlap$hc_log_pregnancy)
+```"
+"1","
+	Pearson's product-moment correlation
+
+data:  hc_time_overlap$hc_log_newborn and hc_time_overlap$hc_log_pregnancy
+t = 7.8083, df = 10, p-value = 1.455e-05
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.7541053 0.9796601
+sample estimates:
+      cor 
+0.9268728 
+"
+"0","```r
+t.test(
+  hc_time_overlap$hc_log_newborn, 
+  hc_time_overlap$hc_log_pregnancy, 
+  paired = TRUE
+)
+```"
+"1","
+	Paired t-test
+
+data:  hc_time_overlap$hc_log_newborn and hc_time_overlap$hc_log_pregnancy
+t = -6.9878, df = 11, p-value = 2.306e-05
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.3048213 -0.6797381
+sample estimates:
+mean of the differences 
+             -0.9922797 
+"
+"0","```r
+cohen.d(
+  hc_time_overlap$hc_log_newborn, 
+  hc_time_overlap$hc_log_pregnancy, 
+  paired = TRUE
+)
+```"
+"1","
+Cohen's d
+
+d estimate: -2.017218 (large)
+95 percent confidence interval:
+       inf        sup 
+-3.0571385 -0.9772972 
+"
+"0","```r
+hc_time_overlap %>% 
+  mutate(
+    diff = hc_log_pregnancy - hc_log_newborn
+  ) %>% 
+  summarise(
+    mean_diff_log = mean(diff),
+    sd_diff_log = sd(diff),
+    mean_diff_exp = exp(mean(diff)),
+    sd_diff_exp = sd(exp(diff))
+  )
+```"

@@ -1,0 +1,1 @@
+"0","ggplot(finaldata, aes(avg_hatecrimes_per_100k_fbi)) + geom_histogram()"

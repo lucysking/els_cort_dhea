@@ -1,0 +1,7 @@
+"0","# set the random seed so that the sample is identical each time"
+"0","set.seed(1234567899)"
+"0","nSamples <- 50000"
+"0","sampleData_df <- #create a data frame with 1 variable representing the number of heads in 100 coin flips"
+"0","  tibble("
+"0","    n_heads = rbinom(n = nSamples, size = 100, prob = 0.5)"
+"0","  )"

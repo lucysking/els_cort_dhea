@@ -1,0 +1,20 @@
+"0","```r
+```r
+interactions::johnson_neyman(
+  ml_WB, 
+  pred = episode_re, 
+  modx = wake_bouts_ac, 
+  control.fdr = TRUE
+)
+
+```
+```"
+"1","[1m[4mJOHNSON-NEYMAN INTERVAL[24m[22m 
+
+When wake_bouts_ac is [7mINSIDE[27m the interval [17.20, 82.78], the slope
+of episode_re is p < .05.
+
+[3mNote: The range of observed values of wake_bouts_ac is [23m[9.00, 31.00]
+
+Interval calculated using false discovery rate adjusted t = 2.16 
+"

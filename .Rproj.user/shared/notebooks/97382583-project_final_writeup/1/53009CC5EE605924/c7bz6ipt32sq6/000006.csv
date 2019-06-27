@@ -1,0 +1,8 @@
+"0","ggplot(data_2017Clean, aes(x = FreedomZ, y = HappyZ)) + "
+"0","  geom_point()+"
+"0","  stat_smooth(method = ""lm"", col = ""red"")+"
+"0","  labs("
+"0","    x = ""Freedom Score (Z-score)"","
+"0","    y = ""Happiness Score (Z-score)"", "
+"0","    title = ""Freedom Comparatively Moderate Contributor to Happiness"""
+"0","  ) "

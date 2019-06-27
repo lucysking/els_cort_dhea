@@ -1,0 +1,10 @@
+"0","```r
+johnson_neyman(hc_childsev_JN, pred = sum_sev_childhood, modx = seg_week_squared)
+```"
+"1","[1m[4mJOHNSON-NEYMAN INTERVAL[24m[22m 
+
+When seg_week_squared is [7mOUTSIDE[27m the interval [-976.14, 530.44], the slope of
+sum_sev_childhood is p < .05.
+
+[3mNote: The range of observed values of seg_week_squared is [23m[0.02, 1764.00]
+"

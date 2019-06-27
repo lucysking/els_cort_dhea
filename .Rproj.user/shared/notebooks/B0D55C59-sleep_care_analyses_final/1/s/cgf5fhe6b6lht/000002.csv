@@ -1,0 +1,18 @@
+"0","```r
+```r
+##Libraries
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(jtools)
+library(nlme)
+library(corrr)
+library(sjstats)
+library(psych)
+##Parameters
+#files_________________________________________________________________
+intervention_file <- \~/Desktop/BABIES/manber_sleep/data/ID and Tx Arm.csv\
+demographics_file <- \~/Desktop/BABIES/manber_sleep/data/Demographics_02.15.18.xlsx\
+infant_age_file <- \~/Desktop/BABIES/manber_sleep/data/ID and Delivery_Day.xlsx\
+```
+```"

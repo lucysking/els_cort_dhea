@@ -1,0 +1,18 @@
+"0","```r
+#sensitivity
+sens_fin <- free_play_wf %>%
+  select(
+    `1_sens_fin`,
+    `2_sens_fin`,
+    `3_sens_fin`,
+    `4_sens_fin`,
+    `5_sens_fin`
+  )
+psych::alpha(sens_fin)
+```"
+"1","
+Reliability analysis   
+Call: psych::alpha(x = sens_fin)
+
+ 
+"

@@ -1,0 +1,38 @@
+"0","```r
+```r
+data_lf <-
+  data_lf %>% 
+  left_join(
+    data_wf %>% 
+      select(ID, sleep_continuity_ac, sleep_disturbed_sd),
+    by = \ID\
+  ) %>% 
+  mutate(
+    Condition = as.factor(Condition),
+    site = as.factor(site),
+    episode_re_cent = scale(episode_re, scale = FALSE),
+    wake_time_ac_cent = scale(wake_time_ac, scale = FALSE),
+    isi_cent = scale(ISI_total, scale = FALSE),
+    sleep_time_ac_cent = scale(sleep_time_ac, scale = FALSE),
+    continuity_ac_hi = sleep_continuity_ac - sd(sleep_continuity_ac, na.rm = TRUE),
+    continuity_ac_lo = sleep_continuity_ac + sd(sleep_continuity_ac, na.rm = TRUE),
+    negmood_cent = scale(negmood_fin, scale = FALSE),
+    epds_cent = scale(EPDS_total, scale = FALSE),
+    mom_age_cent = scale(mom_age, scale = FALSE),
+    income_grp = as.factor(
+      case_when(
+        income == 6 ~ NA_character_,
+        income < 5 ~ \lower\,
+        income == 5 ~ \higher\
+      )
+    ),
+    site = case_when(
+      site == \CR\ ~ -.5,
+      site == \SH\ ~ 0,
+      site == \VM\ ~ .5
+    )
+  )
+contrasts(data_lf$Condition) = c(-1, 1)
+contrasts(data_lf$income_grp) = c(-1, 1)
+```
+```"

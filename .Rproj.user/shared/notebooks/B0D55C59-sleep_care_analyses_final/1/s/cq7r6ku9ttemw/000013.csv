@@ -1,0 +1,10 @@
+"0","```r
+```r
+data_wf %>% 
+  group_by(Condition) %>% 
+  count(race) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```"

@@ -1,0 +1,10 @@
+"0","```r
+```r
+##education
+data_wf %>% 
+  count(education) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```"

@@ -1,0 +1,2 @@
+"0","#Plot 2: Relationship between CVC Total and R PST Gyrus Cluster"
+"0","ggplot(master, aes(x=cvc_total_D1, y=R_PST_Gyrus)) + geom_point() + geom_smooth(method=lm)"

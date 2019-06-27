@@ -1,0 +1,4 @@
+  geom_smooth(method = "lm", se = FALSE, size = 2) +
+]0;~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea[?1034hLucys-MacBook-Pro:els_cort_dhea lucyking$   geom_smooth(method = "lm", se = FALSE, size = 2) +
+bash: syntax error near unexpected token `method'
+]0;~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea[?1034hLucys-MacBook-Pro:els_cort_dhea lucyking$ 

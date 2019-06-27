@@ -1,0 +1,6 @@
+"0","finaldata %>% "
+"0","  summarize("
+"0","    mean = mean(hate_crimes_per_100k_splc),"
+"0","    median = median(hate_crimes_per_100k_splc),"
+"0","    sd = sd(hate_crimes_per_100k_splc)"
+"0","  )"

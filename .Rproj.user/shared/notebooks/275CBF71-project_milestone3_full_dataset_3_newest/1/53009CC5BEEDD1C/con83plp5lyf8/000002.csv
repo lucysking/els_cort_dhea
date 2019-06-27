@@ -1,0 +1,5 @@
+"0","ggplot(data_select_with_means,aes(access, feelings_mean)) +"
+"0","  geom_boxplot() +"
+"0","  ggtitle('Lack of access to medical care increases negative feeling ratings') +"
+"0","  xlab('Lacked access to medical care') +"
+"0","  ylab('Mean negative feeling ratings from feeling scale')"

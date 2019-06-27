@@ -1,0 +1,7 @@
+"0","```r
+hcc_wf %>% 
+ summarise_at(
+    vars(bmi_preg),
+    funs(mean, sd, min, max), na.rm = TRUE
+  )
+```"

@@ -1,0 +1,17 @@
+"0","data_2017 <- read_csv(data_file)"
+"2","Parsed with column specification:
+cols(
+  Country = [31mcol_character()[39m,
+  Happiness.Rank = [32mcol_double()[39m,
+  Happiness.Score = [32mcol_double()[39m,
+  Whisker.high = [32mcol_double()[39m,
+  Whisker.low = [32mcol_double()[39m,
+  Economy..GDP.per.Capita. = [32mcol_double()[39m,
+  Family = [32mcol_double()[39m,
+  Health..Life.Expectancy. = [32mcol_double()[39m,
+  Freedom = [32mcol_double()[39m,
+  Generosity = [32mcol_double()[39m,
+  Trust..Government.Corruption. = [32mcol_double()[39m,
+  Dystopia.Residual = [32mcol_double()[39m
+)
+"

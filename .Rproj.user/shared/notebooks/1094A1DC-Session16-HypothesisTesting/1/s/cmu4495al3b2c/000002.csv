@@ -1,0 +1,7 @@
+"0","nPerGroup <- 20"
+"0","trueDifference <- 1"
+"0","sim.out <- runSimulation(trueDifference, nPerGroup, print.output = TRUE)"
+"1","[1]"
+"1"," ""proportion of significant results (over 5000 simulations): 0.8684"""
+"1","
+"

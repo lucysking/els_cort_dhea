@@ -1,0 +1,11 @@
+"0","```r
+#Use LK's scores as primary. If LK didn't code, use ER's scores. If there are consensus scores, use consensus scores.
+final_scores <- function(lk_score, er_score, con_score) {
+  case_when(
+    is.na(lk_score) ~ er_score,
+    !is.na(con_score) ~ con_score,
+    !is.na(er_score) & is.na(con_score) ~ lk_score,
+    is.na(er_score) & is.na(con_score) ~ lk_score
+  )
+}
+```"

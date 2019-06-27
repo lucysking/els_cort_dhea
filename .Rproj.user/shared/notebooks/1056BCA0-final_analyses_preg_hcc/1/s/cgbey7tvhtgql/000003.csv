@@ -1,0 +1,49 @@
+"0","```r
+set.seed(123)
+#confint.merMod(hc_trimester1, method = \"boot\", boot.type = \"perc\")
+contrasts(hcc$trimester) = cbind(c(1,0,0), c(0,0,1)) #second is baseline
+hc_trimester2 <- lmer(
+  hc_trimlog ~ 
+    trimester + 
+    weeks_preg_cent + 
+    (trimester|ID), 
+  data = hcc
+)
+summary(hc_trimester2)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ trimester + weeks_preg_cent + (trimester | ID)
+   Data: hcc
+
+REML criterion at convergence: 657.7
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.2241 -0.4176  0.0542  0.4498  2.4853 
+
+Random effects:
+ Groups   Name        Variance Std.Dev. Corr       
+ ID       (Intercept) 0.8913   0.9441              
+          trimester1  0.1916   0.4377    0.56      
+          trimester2  0.4230   0.6504   -0.15  0.28
+ Residual             0.1639   0.4048              
+Number of obs: 351, groups:  ID, 58
+
+Fixed effects:
+                  Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)       1.498205   0.133808  60.825288  11.197  < 2e-16 ***
+trimester1       -0.187775   0.092638  40.189950  -2.027  0.04933 *  
+trimester2        0.370944   0.150529  65.243892   2.464  0.01637 *  
+weeks_preg_cent  -0.017746   0.006141 226.653170  -2.890  0.00423 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) trmst1 trmst2
+trimester1   0.240              
+trimester2  -0.310  0.102       
+wks_prg_cnt  0.249  0.061 -0.611
+"
+"0","```r
+std_beta(hc_trimester2)
+```"

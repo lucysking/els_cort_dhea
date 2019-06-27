@@ -1,0 +1,18 @@
+"0","```r
+#positive regard
+posreg_fin <- free_play_wf %>%
+  select(
+    `1_posreg_fin`,
+    `2_posreg_fin`,
+    `3_posreg_fin`,
+    `4_posreg_fin`,
+    `5_posreg_fin`
+  )
+psych::alpha(posreg_fin)
+```"
+"1","
+Reliability analysis   
+Call: psych::alpha(x = posreg_fin)
+
+ 
+"

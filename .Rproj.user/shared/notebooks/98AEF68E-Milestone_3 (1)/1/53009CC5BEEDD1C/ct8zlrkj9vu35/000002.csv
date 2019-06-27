@@ -1,0 +1,8 @@
+"0","count_results %>%"
+"0","ggplot(aes(x = fct_reorder(Country, prop, desc), y = prop, fill = results_war)) +"
+"0","  geom_col() +"
+"0","  xlab(""Countries"") +"
+"0","  ylab(""Proportion of Medal per Country"") +"
+"0","  labs(fill = ""Results of War"") +"
+"0","  ggtitle(""Majority of countries are neutral, USA takes the lead and only 2 countries that lost"") +"
+"0","  theme(axis.text.x = element_text (angle = 90, hjust = 1))"

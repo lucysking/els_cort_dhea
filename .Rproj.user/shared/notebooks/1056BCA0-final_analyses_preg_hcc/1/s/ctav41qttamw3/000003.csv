@@ -1,0 +1,11 @@
+"0","```r
+hc_time_overlap <-
+  hc_time_wf %>% 
+  filter(overlap == \"yes\")
+hc_time_overlap %>% 
+  summarise_at(
+    vars(hc_log_pregnancy, hc_log_newborn, seg_week_newborn, seg_week_pregnancy),
+    funs(mean, sd),
+    na.rm = TRUE
+  )
+```"

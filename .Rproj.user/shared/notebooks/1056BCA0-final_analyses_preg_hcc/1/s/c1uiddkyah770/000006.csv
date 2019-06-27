@@ -1,0 +1,5 @@
+"0","```r
+hcc_wf %>% 
+  count(income_needs < 1) %>% 
+  mutate(per = n / sum(n))
+```"

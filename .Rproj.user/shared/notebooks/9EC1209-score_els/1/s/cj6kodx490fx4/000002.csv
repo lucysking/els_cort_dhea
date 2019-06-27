@@ -1,0 +1,81 @@
+"0","```r
+els_t1 <-
+  read_sav(els_t1_file) %>%
+  mutate_at(
+    vars(Perpetrator:Panel_Independent_Decision),
+    funs(as.double)
+  ) %>% 
+  mutate(
+    ELS_ID = as.integer(ELS_ID),
+    Event_Domain = as.integer(Event_Domain),
+    Event_Domain_Notes = as.character(Event_Domain_Notes),
+    panel_objective_decision_re = recode(
+      Panel_Objective_Decision,
+      \"1\" = 0,
+      \"1.5\" = .5,
+      \"2\" = 1,
+      \"2.5\" = 1.5,
+      \"3\" = 2,
+      \"3.5\" = 2.5,
+      \"4\" = 3,
+      \"4.5\" = 3.5,
+      \"5\" = 4
+    ),
+    panel_objective_decision_re = if_else(
+      Event_Domain == 0, 
+      0, panel_objective_decision_re
+    ), 
+    child_subjective_rating = if_else(
+      Event_Domain == 0, 
+      0, Child_Subjective_Rating
+    ),
+    event_domain_re = recode(
+      Event_Domain,
+      \"1\" = \"exp_acc\",
+      \"2\" = \"wit_acc\",
+      \"3\" = \"disaster\",
+      \"4\" = \"exp_ill\",
+      \"5\" = \"wit_ill\",
+      \"6\" = \"death\",
+      \"7\" = \"sep_wt\", #separation from parents due to work/travel
+      \"8\" = \"moved\",
+      \"9\" = \"divorce\",
+      \"10\" = \"sep_rfd\", #separation from parents due to rehab, foster care, detention
+      \"11\" = \"mental_ill\",
+      \"12\" = \"suicide\",
+      \"13\" = \"phys_ab\",
+      \"14\" = \"thrt_phys_ab\",
+      \"15\" = \"bully\",
+      \"16\" = \"kidnap\",
+      \"17\" = \"animal\",
+      \"18\" = \"parent_arg\",
+      \"19\" = \"thrt_domvio\",
+      \"20\" = \"dom_viol\",
+      \"21\" = \"legal_prob\",
+      \"22\" = \"comm_arg\",
+      \"23\" = \"comm_phys\",
+      \"24\" = \"war_terr\",
+      \"25\" = \"sex_ab\",
+      \"26\" = \"wit_sexab\",
+      \"27\" = \"emo_ab\",
+      \"28\" = \"neglect\",
+      \"29\" = \"finance\",
+      \"30\" = \"other\",
+      \"31\" = \"comm_inst\",
+      \"32\" = \"mug_rob\",
+      .default = \"nothing_reported\"
+    )
+  ) %>% 
+  group_by(ELS_ID) %>% 
+  mutate(
+    num_report_t1 = if_else(
+      Event_Domain != 0,
+      n(), as.integer(0)
+    )
+  ) %>% 
+  ungroup()
+# replace user-defined missing values with NA
+els_t1[els_t1 == 777] <- NA
+els_t1[els_t1 == 888] <- NA
+els_t1[els_t1 == 999] <- NA
+```"

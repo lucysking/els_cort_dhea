@@ -1,0 +1,10 @@
+"0","```r
+```r
+  
+data_wf %>% 
+  count(!is.na(sens_M), !is.na(ISI_total)) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```"

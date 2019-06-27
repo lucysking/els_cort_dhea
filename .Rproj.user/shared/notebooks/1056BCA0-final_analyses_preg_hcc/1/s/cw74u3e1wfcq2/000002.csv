@@ -1,0 +1,16 @@
+"0","```r
+overlap_IDs <- 
+  hc_time_overlap %>% 
+  select(ID) %>% 
+  pull()
+hcc <-
+  hcc %>% 
+  mutate(
+    hc_trimlog = if_else(
+      ID %in% overlap_IDs & 
+        timepoint == \"newborn\" &
+        segment == 5,
+      NA_real_, hc_trimlog
+    )
+  ) 
+```"

@@ -1,0 +1,18 @@
+"1","
+ Number of subjects = 69     Number of Judges =  2
+"
+"0","```r
+#intrusiveness
+intrus <- 
+  free_play %>%
+  select(
+    Intrus_ER,
+    Intrus_LK
+  ) %>% 
+  na.omit()
+ICC(intrus)
+```"
+"1","Call: ICC(x = intrus)
+
+Intraclass correlation coefficients 
+"

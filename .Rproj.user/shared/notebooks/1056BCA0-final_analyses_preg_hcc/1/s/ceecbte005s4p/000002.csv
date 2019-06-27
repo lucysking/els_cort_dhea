@@ -1,0 +1,18 @@
+"0","```r
+hcc <-
+  hcc %>% 
+  left_join(
+    lscr_preg %>% 
+      select(
+        ID,
+        sum_sev_childhood,
+        sum_sev_childhood_win,
+        pregnancy_stress
+      ),
+    by = \"ID\"
+  ) %>% 
+  mutate(
+    pregnancy_stress = as.factor(pregnancy_stress),
+    sum_sev_child_cent = scale(sum_sev_childhood_win, scale = FALSE)
+  )
+```"

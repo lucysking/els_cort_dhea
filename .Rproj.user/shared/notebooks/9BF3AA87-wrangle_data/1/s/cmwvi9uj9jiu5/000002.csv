@@ -1,0 +1,6 @@
+"0","cd_wf <-"
+"0","  cd_wf %>% "
+"0","  mutate("
+"0","    dhea_slope_yr_win = winsorize(dhea_slope_yr, 3),"
+"0","    test_slope_yr_win = winsorize(test_slope_yr, 3)"
+"0","  )"

@@ -1,0 +1,3 @@
+"0","data_2017Clean <- data_2017 %>%"
+"0","  select(Happiness.Rank, Happiness.Score, Economy..GDP.per.Capita., Family, Freedom, Generosity, Trust..Government.Corruption., Health..Life.Expectancy., Dystopia.Residual) %>%"
+"0","  rename(Economy = Economy..GDP.per.Capita. ,Health = Health..Life.Expectancy.,Gov = Trust..Government.Corruption.)"

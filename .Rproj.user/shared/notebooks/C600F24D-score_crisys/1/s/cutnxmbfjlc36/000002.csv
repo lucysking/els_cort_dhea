@@ -1,0 +1,22 @@
+"0","```r
+crisys_6mo <-
+  crisys_wf %>% 
+    select(
+      ID,
+      crisys_total_6mo = sixmonth_crisys_total
+    )
+  
+crisys_6mo %>% 
+  ggplot(aes(crisys_total_6mo)) +
+  geom_histogram(bins = 20)
+
+crisys_6mo <- 
+  winsorize(crisys_6mo, crisys_total_6mo) %>% 
+  rename(crisys_total_6mo_win = value)
+
+crisys_6mo %>% 
+  ggplot(aes(crisys_total_6mo_win)) +
+  geom_histogram(bins = 20)
+
+write_csv(crisys_6mo, \"~/Desktop/lena_18mo_symptoms/Data/crisys_6mo_20190413.csv\")
+```"

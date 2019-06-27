@@ -1,0 +1,19 @@
+"0","```r
+hcc <-
+  hc %>% 
+  left_join(hc_covariates, by = \"ID\") %>% 
+  left_join(hc_questions, by = c(\"ID\", \"timepoint\")) %>% 
+  left_join(demo, by = \"ID\") %>% 
+  mutate(
+    hair_dye_weeks_preg = weeks_preg - hair_dye_weeks,
+    hair_dye_preg = case_when(
+      hair_dye_weeks_preg < 0 | hair_dye_weeks_preg > 40 ~ 0,
+      is.na(hair_dye_weeks_preg) ~ 0,
+      TRUE ~ 1
+    ),
+    mom_age = (mom_dob %--% date_t1_hair) / years(1)
+  ) %>% 
+  mutate(
+    weeks_preg_cent = scale(weeks_preg, scale = FALSE)
+  )
+```"

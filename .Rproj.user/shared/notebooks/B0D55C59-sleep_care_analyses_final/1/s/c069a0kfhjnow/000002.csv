@@ -1,0 +1,104 @@
+"0","```r
+demographics_all <- 
+  readxl::read_xlsx(demographics_file, sheet = \"Demographics_02.15.18\") %>% 
+  select(
+    ID,
+    site = SITE,
+    mom_dob = DOB,
+    latino = Eth_latino,
+    race = Race,
+    education = Education,
+    income = Income
+  ) %>% 
+  left_join(
+    free_play_wf %>% 
+      select(
+        ID,
+        sens_M
+      ),
+    by = \"ID\"
+  ) %>% 
+  mutate(
+    included = if_else(
+      !is.na(sens_M),
+      1, 0
+    ),
+    income_clean = if_else(income == 6, NA_real_, income)
+  ) 
+
+##site
+demographics_all %>% 
+  count(site, included) %>% 
+  mutate(
+    per = if_else(
+      included == 1, 
+      n / 67, n / 194
+    )
+  ) %>% 
+  arrange(included)
+    
+##ethnicity
+demographics_all %>% 
+  count(latino, included) %>% 
+  mutate(
+    per = if_else(
+      included == 1, 
+      n / 67, n / 127
+    )
+  ) %>% 
+  arrange(included)
+
+##race
+demographics_all %>% 
+  mutate(
+    white = if_else(
+      race == 1,
+      1, 0
+    )
+  ) %>% 
+  count(white, included) %>% 
+  mutate(
+    per = if_else(
+      included == 1, 
+      n / 67, n / 127
+    )
+  ) %>% 
+  arrange(included)
+
+
+##race and eth
+demographics_all %>% 
+  mutate(
+    white = if_else(
+      race == 1,
+      1, 0
+    )
+  ) %>% 
+  count(white, latino, included) %>% 
+  mutate(
+    per = if_else(
+      included == 1, 
+      n / 67, n / 127
+    )
+  ) %>% 
+  arrange(included)
+
+##income
+demographics_all %>% 
+  filter(!is.na(income_clean)) %>% 
+  mutate(
+    income_grp = if_else(
+      income_clean > 4, 
+      \"higher\", \"lower\"
+    )
+  ) %>% 
+  count(income_grp, included) %>% 
+  mutate(
+    per = if_else(
+      included == 1, 
+      n / 63, n / 115
+    )
+  ) %>% 
+  arrange(included)
+
+```"

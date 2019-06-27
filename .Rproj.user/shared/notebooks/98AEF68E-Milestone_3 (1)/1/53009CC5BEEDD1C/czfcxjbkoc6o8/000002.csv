@@ -1,0 +1,6 @@
+"0","count %>%"
+"0","ggplot(aes(x = results_war, y = prop)) +"
+"0","  geom_col() +"
+"0","  xlab(""Outcomes of War"") +"
+"0","  ylab(""Proportion of Medals by Outcome"") +"
+"0","  ggtitle(""Neutral countries take most medals followed by winning side and then, losing side"")"

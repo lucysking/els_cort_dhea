@@ -1,0 +1,5 @@
+"0","trueDifferences <- seq(0, 2, 0.1)"
+"0","proportionSignificant <- array(NA, length(trueDifferences))"
+"0","for (i in 1:length(trueDifferences)) {"
+"0","  proportionSignificant[i] <- runSimulation(trueDifferences[i], nPerGroup)"
+"0","}"

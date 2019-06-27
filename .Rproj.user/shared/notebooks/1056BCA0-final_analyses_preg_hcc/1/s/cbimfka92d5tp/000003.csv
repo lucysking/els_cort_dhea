@@ -1,0 +1,68 @@
+"0","```r
+set.seed(123)
+#confint.merMod(hc_childsev2, method = \"boot\", boot.type = \"perc\")
+##simple effects
+sum_sev_childhood_win_10 <-
+  quantile(hcc$sum_sev_childhood_win, .10 , na.rm = TRUE)
+sum_sev_childhood_win_50 <-
+  quantile(hcc$sum_sev_childhood_win, .50 , na.rm = TRUE)
+sum_sev_childhood_win_90 <-
+  quantile(hcc$sum_sev_childhood_win, .90 , na.rm = TRUE)
+hcc <-
+  hcc %>% 
+  mutate(
+    sum_sev_child_lo = sum_sev_childhood_win - sum_sev_childhood_win_10,
+    sum_sev_child_hi = sum_sev_childhood_win - sum_sev_childhood_win_90
+  )
+#low stress severity
+hc_childsev2_lo <- lmer(
+  hc_trimlog ~ 
+    poly(seg_week, 2) * sum_sev_child_lo + 
+    weeks_preg_cent + 
+    (seg_week|ID), 
+  data = hcc
+)
+summary(hc_childsev2_lo)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ poly(seg_week, 2) * sum_sev_child_lo + weeks_preg_cent +  
+    (seg_week | ID)
+   Data: hcc
+
+REML criterion at convergence: 645.9
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.4927 -0.3631  0.0378  0.3912  2.8391 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. Corr 
+ ID       (Intercept) 1.7920193 1.3387        
+          seg_week    0.0009242 0.0304   -0.73
+ Residual             0.1773026 0.4211        
+Number of obs: 343, groups:  ID, 57
+
+Fixed effects:
+                                      Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)                           1.510860   0.187254  54.142359   8.069 7.51e-11 ***
+poly(seg_week, 2)1                    3.660306   1.601507  71.954188   2.286  0.02523 *  
+poly(seg_week, 2)2                    1.637230   0.885392 265.054632   1.849  0.06555 .  
+sum_sev_child_lo                      0.012693   0.014802  53.747244   0.858  0.39496    
+weeks_preg_cent                      -0.016026   0.006232 295.765010  -2.571  0.01062 *  
+poly(seg_week, 2)1:sum_sev_child_lo   0.098802   0.113159  44.916314   0.873  0.38724    
+poly(seg_week, 2)2:sum_sev_child_lo  -0.182625   0.056875 279.993271  -3.211  0.00148 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) pl(_,2)1 pl(_,2)2 sm_s__ wks_p_ p(_,2)1:
+ply(sg_,2)1 -0.225                                         
+ply(sg_,2)2  0.072  0.147                                  
+sm_sv_chld_ -0.706  0.151   -0.043                         
+wks_prg_cnt -0.006 -0.415   -0.428    0.020                
+p(_,2)1:___  0.179 -0.607    0.028   -0.251 -0.057         
+p(_,2)2:___ -0.044 -0.032   -0.667    0.046  0.085  0.037  
+"
+"0","```r
+std_beta(hc_childsev2_lo)
+```"

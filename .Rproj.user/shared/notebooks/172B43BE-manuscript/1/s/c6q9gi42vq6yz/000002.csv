@@ -1,0 +1,5 @@
+"0","count_sex <-"
+"0","  cd_clean %>% "
+"0","  filter(timepoint == ""T1"") %>% "
+"0","  count(male) %>% "
+"0","  mutate(prop = round(n / sum(n), 2))"

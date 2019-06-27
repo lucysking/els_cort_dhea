@@ -1,0 +1,91 @@
+"0","```r
+set.seed(123)
+#confint.merMod(hc_0, method = \"boot\", boot.type = \"perc\")
+hc_0_poly <- lmer(
+  hc_trimlog ~ 
+    poly(seg_week, 2) + 
+    weeks_preg_cent + 
+    (seg_week|ID), 
+  data = hcc
+)
+summary(hc_0_poly)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ poly(seg_week, 2) + weeks_preg_cent + (seg_week |      ID)
+   Data: hcc
+
+REML criterion at convergence: 654.6
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.6115 -0.3400  0.0450  0.3704  2.8725 
+
+Random effects:
+ Groups   Name        Variance Std.Dev. Corr 
+ ID       (Intercept) 1.77114  1.33084       
+          seg_week    0.00086  0.02932  -0.74
+ Residual             0.18290  0.42767       
+Number of obs: 351, groups:  ID, 58
+
+Fixed effects:
+                     Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)          1.610127   0.130179  56.370963  12.369  < 2e-16 ***
+poly(seg_week, 2)1   4.464776   1.255455 118.931135   3.556 0.000541 ***
+poly(seg_week, 2)2  -0.255291   0.646630 277.282034  -0.395 0.693292    
+weeks_preg_cent     -0.013957   0.006132 303.690873  -2.276 0.023541 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) p(_,2)1 p(_,2)2
+ply(sg_,2)1 -0.225                
+ply(sg_,2)2  0.054  0.277         
+wks_prg_cnt  0.013 -0.588  -0.502 
+"
+"0","```r
+hcc_1thru4 <-
+  hcc %>% 
+  filter(segment < 5)
+hc_0_sens <- lmer(
+  hc_trimlog ~ 
+    seg_week + 
+    weeks_preg_cent + 
+    (seg_week|ID), 
+  data = 
+    hcc_1thru4
+)
+summary(hc_0_sens)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ seg_week + weeks_preg_cent + (seg_week | ID)
+   Data: hcc_1thru4
+
+REML criterion at convergence: 573.9
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.3863 -0.3333  0.0445  0.4259  3.3538 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. Corr 
+ ID       (Intercept) 1.6189020 1.27236       
+          seg_week    0.0007976 0.02824  -0.70
+ Residual             0.1864429 0.43179       
+Number of obs: 288, groups:  ID, 58
+
+Fixed effects:
+                  Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)       1.075732   0.224431 100.870296   4.793 5.67e-06 ***
+seg_week          0.024697   0.007296 157.657582   3.385 0.000899 ***
+weeks_preg_cent  -0.017041   0.006581 232.725824  -2.589 0.010224 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) seg_wk
+seg_week    -0.825       
+wks_prg_cnt  0.522 -0.662
+"
+"0","```r
+std_beta(hc_0_sens)
+```"

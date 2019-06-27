@@ -1,0 +1,16 @@
+"0","```r
+```r
+data_wf %>% 
+  count(!is.na(sens_M), !is.na(wake_time_ac)) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```r
+data_wf %>% 
+  count(!is.na(sens_M), !is.na(wake_time_sd)) %>% 
+  mutate(
+    per = n / sum(n)
+  )
+```
+```"

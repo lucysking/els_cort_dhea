@@ -1,0 +1,4 @@
+"0","```r
+set.seed(123)
+#confint.merMod(hc_trimester2, method = \"boot\", boot.type = \"perc\")
+```"

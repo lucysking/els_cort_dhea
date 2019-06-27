@@ -1,0 +1,43 @@
+"0","```r
+```r
+#overall
+data_wf %>% 
+  summarise_at(
+    vars(
+      n_days_ac,
+      n_days_sd,
+      wake_time_ac, 
+      wake_bouts_ac, 
+      sleep_time_ac, 
+      wake_time_sd,
+      wake_bouts_sd,
+      sleep_time_sd,
+      quality_sd,
+      ISI_total, 
+      EPDS_total
+      ),
+    funs(mean, sd, min, max), na.rm = TRUE
+  )
+```
+```r
+#by intervention condition
+data_wf %>% 
+  group_by(Condition) %>% 
+  summarise_at(
+    vars(
+      n_days_ac,
+      n_days_sd,
+      wake_time_ac, 
+      wake_bouts_ac, 
+      sleep_time_ac, 
+      wake_time_sd,
+      wake_bouts_sd,
+      sleep_time_sd,
+      quality_sd,
+      ISI_total, 
+      EPDS_total
+      ),
+    funs(mean, sd, min, max), na.rm = TRUE
+  )
+```
+```"

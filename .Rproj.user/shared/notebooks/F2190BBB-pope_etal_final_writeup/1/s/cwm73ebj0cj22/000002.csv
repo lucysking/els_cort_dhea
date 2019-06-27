@@ -1,0 +1,6 @@
+"0","finaldata %>% "
+"0","  "
+"0","  ggplot(aes(x = fct_reorder(state, share_vote_trump, desc = TRUE), y = share_vote_trump)) + "
+"0","  geom_col() + "
+"0","  coord_flip() +"
+"0","  labs(y= ""Share of U.S, presidential voters who voted for Donald Trump"",x= ""State"")"

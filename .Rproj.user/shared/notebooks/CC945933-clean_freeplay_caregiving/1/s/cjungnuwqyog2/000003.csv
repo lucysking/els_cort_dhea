@@ -1,0 +1,20 @@
+"1","
+ Number of subjects = 14     Number of Judges =  2
+"
+"0","```r
+#instrusiveness
+intrusM <- 
+  free_play_means %>%
+  select(
+    intrus_M_ER,
+    intrus_M_LK
+  ) %>% 
+  na.omit(intrusM)
+ICC(intrusM)
+```"
+"1","Model failed to converge with max|grad| = 0.0239701 (tol = 0.002, component 1)
+"
+"1","Call: ICC(x = intrusM)
+
+Intraclass correlation coefficients 
+"

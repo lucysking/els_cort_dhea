@@ -1,0 +1,2 @@
+"0","finaldata <- finaldata %>%"
+"0","  drop_na()"

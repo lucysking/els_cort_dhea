@@ -1,0 +1,17 @@
+"0","```r
+```r
+corr_sleep_plot <- 
+  data_wf %>%
+  select(
+    `Objective WASO` = wake_time_ac,
+    `Objective arousals` = wake_bouts_ac,
+    `Objective TST` = sleep_time_ac,
+    `Subjective WASO` = wake_time_sd,
+    `Subjective awakenings` = wake_bouts_sd,
+    `Subjective TST` = sleep_time_sd,
+    `Perceived quality` = quality_sd
+  ) %>% 
+  cor(use = \complete.obs\, method = \pearson\)
+ggcorrplot(corr_sleep_plot)
+```
+```"

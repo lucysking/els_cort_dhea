@@ -1,0 +1,6 @@
+"0","#plot the data"
+"0","sampleData_df %>% "
+"0","  ggplot(aes(n_heads)) +"
+"0","  geom_histogram(bins = 100, binwidth = 0.5, center = 0) +"
+"0","  geom_vline(aes(xintercept = 70), color = ""blue"") +"
+"0","  labs(x = ""Number of heads"")"

@@ -1,0 +1,23 @@
+"0","```r
+#Libraries
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(modelr)
+library(jtools)
+library(sjstats)
+library(effsize)
+#Parameters
+hair_cort_covariates_file <-
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/haircort_controlvariables_2018102.csv\"
+hair_questions_file <- 
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/hair_questions_cleaned_20180924.csv\"
+delivery_questions_file <- 
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/delivery_variables_20181012.csv\"
+demographics_file <- 
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/LongitudinalBABIES_demo_20180911.csv\"
+parity_file <- 
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/parity_longitudinalbabies_20181017.csv\"
+mom_dob_file <-  
+  \"~/Desktop/BABIES/preg_hair_cortisol/data/LongitudinalBABIES_dob_20180911.csv\"
+```"

@@ -1,0 +1,4 @@
+"0","```r
+hcc_wf %>% 
+  count(smoking_prenatal)
+```"

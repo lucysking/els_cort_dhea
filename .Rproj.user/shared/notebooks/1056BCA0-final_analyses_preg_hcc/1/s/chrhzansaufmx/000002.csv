@@ -1,0 +1,10 @@
+"0","```r
+hcc_wf %>% 
+  mutate(
+    weeks_T1toT2 = weeks_preg_T2 - weeks_preg_T1
+  ) %>% 
+  summarise_at(
+    vars(weeks_preg_T1, weeks_preg_T2, weeks_T1toT2),
+    funs(mean, sd), na.rm = TRUE
+  )
+```"

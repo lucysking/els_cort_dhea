@@ -1,0 +1,4 @@
+"0","#calculate the mean difference between the two PhysActive groups"
+"0","##method 1: use index numbers"
+"0","meanDiff <- sampleSummary[1, 3] - sampleSummary[2, 3]"
+"0","meanDiff"

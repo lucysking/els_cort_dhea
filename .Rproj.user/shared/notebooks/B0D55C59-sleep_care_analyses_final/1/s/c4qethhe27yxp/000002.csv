@@ -1,0 +1,57 @@
+"0","```r
+```r
+ml_SD <- lmer(
+  sens_fin ~ 
+    episode_re * sleep_disturbed_sd + 
+    Condition + 
+    site + 
+    (1|ID), 
+  REML = FALSE,
+  data = data_lf
+  )
+summary(ml_SD)
+```
+```"
+"1","Linear mixed model fit by maximum likelihood . t-tests use Satterthwaite's  method
+ [lmerModLmerTest]
+Formula: sens_fin ~ episode_re * sleep_disturbed_sd + Condition + site +  
+    (1 | ID)
+   Data: data_lf
+
+     AIC      BIC   logLik deviance df.resid 
+   625.9    654.7   -304.9    609.9      263 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.9277 -0.6022 -0.0744  0.6126  3.3717 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ ID       (Intercept) 0.8302   0.9112  
+ Residual             0.3279   0.5726  
+Number of obs: 271, groups:  ID, 55
+
+Fixed effects:
+                               Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)                     3.81934    0.14616  69.40842  26.131   <2e-16 ***
+episode_re                     -0.06444    0.02487 216.32382  -2.591   0.0102 *  
+sleep_disturbed_sd              0.01671    0.14019  71.19226   0.119   0.9055    
+Condition1                      0.05148    0.12898  55.07046   0.399   0.6914    
+site                           -0.19695    0.40875  55.06481  -0.482   0.6318    
+episode_re:sleep_disturbed_sd   0.01831    0.02475 216.13139   0.740   0.4602    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) epsd_r slp_d_ Cndtn1 site  
+episode_re  -0.332                            
+slp_dstrbd_  0.058  0.002                     
+Condition1   0.027 -0.003  0.084              
+site         0.353  0.005  0.167  0.120       
+epsd_r:sl__  0.001 -0.009 -0.351  0.003 -0.001
+"
+"0","```r
+```r
+std_beta(ml_SD)
+```
+```"

@@ -1,0 +1,44 @@
+"0","```r
+hc_0 <- lmer(
+  hc_trimlog ~ 
+    seg_week + 
+    weeks_preg_cent + 
+    (seg_week|ID), 
+  data = 
+    hcc
+)
+summary(hc_0)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ seg_week + weeks_preg_cent + (seg_week | ID)
+   Data: hcc
+
+REML criterion at convergence: 666.4
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.6052 -0.3308  0.0445  0.3730  2.8736 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. Corr 
+ ID       (Intercept) 1.7858677 1.33636       
+          seg_week    0.0008766 0.02961  -0.75
+ Residual             0.1819574 0.42656       
+Number of obs: 351, groups:  ID, 58
+
+Fixed effects:
+                  Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)       1.124227   0.204771  72.477689   5.490 5.63e-07 ***
+seg_week          0.022948   0.006035 108.162076   3.803 0.000237 ***
+weeks_preg_cent  -0.015162   0.005295 295.599187  -2.863 0.004492 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) seg_wk
+seg_week    -0.789       
+wks_prg_cnt  0.367 -0.537
+"
+"0","```r
+std_beta(hc_0)
+```"

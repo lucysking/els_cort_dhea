@@ -1,0 +1,6 @@
+"0","```r
+hcc_wf %>% 
+  count(annual_income) %>% 
+  mutate(per = n / sum(n)) %>% 
+  arrange(desc(annual_income))
+```"

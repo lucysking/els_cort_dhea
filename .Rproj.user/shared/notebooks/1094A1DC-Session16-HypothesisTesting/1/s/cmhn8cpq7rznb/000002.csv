@@ -1,0 +1,6 @@
+"0","upperpt <- 1 - lowerpt"
+"0","print(paste(""upper tail probability (t distribution):"", upperpt[1]))"
+"1","[1]"
+"1"," ""upper tail probability (t distribution): 0.0129196638902374"""
+"1","
+"

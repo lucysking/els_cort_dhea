@@ -1,0 +1,8 @@
+"0","```r
+hcc %>% 
+  distinct(ID, mom_age) %>% 
+  summarise_at(
+    vars(mom_age),
+    funs(mean, sd)
+  )
+```"

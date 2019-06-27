@@ -1,0 +1,8 @@
+"0","#plot the data"
+"0","NHANES_sample %>% "
+"0","  ggplot(aes(x = PhysActive, y = BMI)) +"
+"0","  geom_boxplot() + "
+"0","  labs("
+"0","    x = ""Physically active?"","
+"0","    y = ""Body Mass Index (BMI)"""
+"0","  )"

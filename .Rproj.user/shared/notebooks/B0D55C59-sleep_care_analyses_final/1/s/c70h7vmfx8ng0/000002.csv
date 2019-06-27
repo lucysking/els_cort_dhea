@@ -1,0 +1,15 @@
+"0","```r
+```r
+cortest.bartlett(corr_sleep_plot)
+```
+```"
+"1","n not specified, 100 used
+$chisq
+[1] 260.6602
+
+$p.value
+[1] 2.948082e-43
+
+$df
+[1] 21
+"

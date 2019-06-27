@@ -1,0 +1,7 @@
+"0","```r
+hcc_wf <-
+  hc_wf %>% 
+  left_join(demo, by = \"ID\") %>% 
+  left_join(hc_covariates, by = \"ID\") %>% 
+  left_join(lscr_preg, by = \"ID\") 
+```"

@@ -1,0 +1,65 @@
+"0","```r
+#centered with linear and quadratic term
+hcc <-
+  hcc %>% 
+  mutate(
+    INR_cent = scale(income_needs, scale = FALSE)
+  )
+hc_inr2 <- lmer(
+  hc_trimlog ~ 
+    poly(seg_week, 2) * sum_sev_child_cent +
+    poly(seg_week, 2) * income_needs + 
+    weeks_preg_cent + 
+    (seg_week|ID), 
+  data = hcc
+)
+summary(hc_inr2)
+```"
+"1","Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: hc_trimlog ~ poly(seg_week, 2) * sum_sev_child_cent + poly(seg_week,  
+    2) * income_needs + weeks_preg_cent + (seg_week | ID)
+   Data: hcc
+
+REML criterion at convergence: 593.5
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.3189 -0.3847  0.0161  0.3780  2.7838 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. Corr 
+ ID       (Intercept) 1.8845407 1.37279       
+          seg_week    0.0009876 0.03143  -0.73
+ Residual             0.1783268 0.42229       
+Number of obs: 315, groups:  ID, 53
+
+Fixed effects:
+                                        Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)                             1.918403   0.382654  49.226271   5.013 7.32e-06 ***
+poly(seg_week, 2)1                      7.328849   3.136786  53.673141   2.336  0.02323 *  
+poly(seg_week, 2)2                     -0.887517   1.686304 239.054715  -0.526  0.59916    
+sum_sev_child_cent                      0.006341   0.016338  48.050419   0.388  0.69964    
+income_needs                           -0.173628   0.233089  48.971012  -0.745  0.45989    
+weeks_preg_cent                        -0.014986   0.006662 269.643727  -2.249  0.02530 *  
+poly(seg_week, 2)1:sum_sev_child_cent   0.063041   0.123643  38.588542   0.510  0.61305    
+poly(seg_week, 2)2:sum_sev_child_cent  -0.182413   0.059558 256.672498  -3.063  0.00243 ** 
+poly(seg_week, 2)1:income_needs        -2.105682   1.849712  46.959196  -1.138  0.26073    
+poly(seg_week, 2)2:income_needs         0.581714   0.985008 236.769259   0.591  0.55537    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) pl(_,2)1 pl(_,2)2 sm_s__ incm_n wks_p_ p(_,2)1:__ p(_,2)2:__ pl(_,2)1:_
+ply(sg_,2)1 -0.245                                                                        
+ply(sg_,2)2  0.070 -0.010                                                                 
+sm_sv_chld_ -0.249  0.047    0.009                                                        
+income_neds -0.930  0.236   -0.063    0.261                                               
+wks_prg_cnt  0.039 -0.219   -0.219    0.003 -0.034                                        
+p(_,2)1:___  0.051 -0.183    0.004   -0.251 -0.058 -0.090                                 
+p(_,2)2:___  0.009 -0.038   -0.203    0.031 -0.020  0.069  0.050                          
+ply(_,2)1:_  0.236 -0.903    0.080   -0.054 -0.263 -0.020  0.210      0.031               
+ply(_,2)2:_ -0.073  0.073   -0.912   -0.019  0.077  0.020  0.020      0.151     -0.100    
+"
+"0","```r
+std_beta(hc_inr2)
+```"

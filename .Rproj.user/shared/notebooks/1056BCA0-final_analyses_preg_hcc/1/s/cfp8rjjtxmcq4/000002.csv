@@ -1,0 +1,16 @@
+"0","```r
+hcc_trim <-
+  hcc %>% 
+  filter(!is.na(hc_trimlog))
+hc_resid <- lmer(
+  hc_trimlog ~  
+    weeks_preg_cent +
+    (1|ID),
+  data = hcc_trim
+)
+hcc_trim <- 
+  hcc_trim %>% 
+  mutate(
+    hcc_resid = resid(hc_resid)
+  ) 
+```"

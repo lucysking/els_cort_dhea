@@ -1,0 +1,11 @@
+"0","```r
+actigraphy_wf <-
+  actigraphy %>% 
+  group_by(ID) %>% 
+  summarise(
+    n_days_ac = n(),
+    wake_time_ac = mean(wake_time, na.rm = TRUE),
+    wake_bouts_ac = mean(wake_bouts, na.rm = TRUE),
+    sleep_time_ac = mean(sleep_time, na.rm = TRUE)
+  ) 
+```"

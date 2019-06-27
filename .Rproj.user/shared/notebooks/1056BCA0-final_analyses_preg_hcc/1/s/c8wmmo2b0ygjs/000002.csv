@@ -1,0 +1,9 @@
+"0","```r
+hcc_wf <-
+  hc_wf %>% 
+  left_join(hc_covariates, by = \"ID\") 
+hcc_wf %>% 
+  count(labor_mode)
+```"
+"1","Factor `labor_mode` contains implicit NA, consider using `forcats::fct_explicit_na`
+"

@@ -1,0 +1,54 @@
+"0","```r
+hcc_trim %>%
+  filter(
+    !is.na(sev_child_grp),
+    seg_week < 23
+  ) %>% 
+  ggplot(aes(seg_week, hcc_resid)) +
+  geom_smooth(
+    method = \"lm\",
+    se = FALSE,
+    aes(
+      color = fct_rev(sev_child_grp),
+      group = factor(ID)
+    )
+  ) +
+  geom_smooth(
+    data = hcc_trim %>% 
+      filter(
+        !is.na(sev_child_grp),
+        seg_week > 23
+      ),
+    method = \"lm\",
+    se = FALSE,
+    aes(
+      color = fct_rev(sev_child_grp),
+      group = factor(ID)
+    )
+  ) +
+  geom_vline(xintercept = 23, linetype = \"dashed\") +
+  scale_x_continuous(breaks = seq.int(0, 40, 5)) +
+  scale_color_manual(
+    name = \"Childhood stress severity\",
+    labels = c(\"Lower\", \"Higher\"),
+    values = c(\"red\", \"blue\")
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = \"bottom\",
+    legend.title = element_text(size = 32),
+    legend.text = element_text(size = 26),
+    axis.title = element_text(size = 38),
+    axis.text = element_text(size = 32),
+    aspect.ratio = .75
+  ) +
+  labs(
+    x = \"Week of pregnancy\",
+    y = \"residual log(HCC) (pg/mg)\"
+  )
+ggsave(
+  \"~/Desktop/BABIES/preg_hair_cortisol/preg_hair_cort_sync/plots/childsev_ID_hcc.png\",
+  width = 10,
+  height = 10
+  )
+```"

@@ -1,0 +1,9 @@
+"0","```r
+```r
+data_wf %>% 
+  filter(income != \6\) %>% 
+  summarise(
+    median(income) #5 = $100,000 or More 
+  )
+```
+```"
