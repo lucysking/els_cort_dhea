@@ -19,34 +19,7 @@ affiliation:
   - id            : "1"
     institution   : "Stanford University"
   - id            : "2"
-    institution   : "Harvard University"
-
-authornote: |
-  Add complete departmental affiliations for each author here. Each new line herein must be indented, like this line.
-
-  Enter author note here.
-
-abstract: |
-  One or two sentences providing a **basic introduction** to the field,  comprehensible to a scientist in any discipline.
-  
-  Two to three sentences of **more detailed background**, comprehensible  to scientists in related disciplines.
-  
-  One sentence clearly stating the **general problem** being addressed by  this particular study.
-  
-  One sentence summarizing the main result (with the words "**here we show**" or their equivalent).
-  
-  Two or three sentences explaining what the **main result** reveals in direct comparison to what was thought to be the case previously, or how the  main result adds to previous knowledge.
-  
-  One or two sentences to put the results into a more **general context**.
-  
-  Two or three sentences to provide a **broader perspective**, readily comprehensible to a scientist in any discipline.
-  
-  <!-- https://tinyurl.com/ybremelq -->
-  
-keywords          : "keywords"
-wordcount         : "X"
-
-bibliography      : ["r-references.bib"]
+    institution   : "University of Washington"
 
 floatsintext      : no
 figurelist        : no
@@ -83,6 +56,7 @@ cd_lf_file <- "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_20190509.
 cd_wf_all_file <- "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_all_wf_20190509.csv"
 cd_wf_file <- "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_wf_20190509.csv"
 els_file <- "~/Desktop/ELS/stress_data/data/els_severity_scores_20190221.csv"
+severity_file <- "~/Desktop/ELS/stress_data/data/severity_by_event_20190825.csv"
 demo_file <- "~/Desktop/ELS/cort_dhea/data/data_final/demo.csv"
 tanner_file <- "~/Desktop/ELS/cort_dhea/data/data_final/tanner_t1t2.csv"
 
@@ -152,7 +126,6 @@ distinct_IDs_timepoint <-
   )
 
 distinct_IDs_all <- 
-  cd_clean_id <-
   cd_clean %>% 
   distinct(ELS_ID) %>% 
   mutate(
@@ -163,7 +136,7 @@ distinct_IDs_all <-
 ```{r missing_data_compare, include=FALSE}
 all_els_demo <-
   read_csv(els_file) %>% 
-  select(ELS_ID, sumsev_threat_t1, sumsev_threat_t2) %>% 
+  select(ELS_ID, sumsev_threat_t1, sumsev_threat_t2, sumsev_type_t1) %>% 
   left_join(
     read_csv(demo_file, na = c("999", "888")) %>% 
       filter(timepoint == "T1"),
@@ -207,6 +180,86 @@ t_test_inr_included <- t.test(inr_t1 ~ included, data = all_els_demo)
 t.test(tanner_av ~ included, data = all_els_demo)
 ```
 
+
+```{r interval_dis, include=FALSE}
+cd_wf_clean %>% 
+  ggplot(aes(interval_yr)) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq.int(1, 3, .25)) +
+  labs(
+    x = "T1 to T2 interval (years)"
+  )
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/interval_dist.png", width = 7, height = 5)
+```
+
+
+```{r tanner_dis, include=FALSE}
+cd_clean %>% 
+  ggplot(aes(tanner_av)) +
+  geom_histogram(binwidth = .5) +
+  facet_grid(.~timepoint)
+
+cd_clean %>% 
+  ggplot(aes(tanner_av, fill = timepoint)) +
+  geom_density(alpha = 1/2) +
+  labs(
+    fill = "",
+    x = "Pubertal stage"
+  )
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/tanner_dist.png", width = 7, height = 5)
+
+cd_wf_clean <-
+  cd_wf_clean %>% 
+  mutate(
+    tan_diff = tanner_t2 - tanner_t1
+  )
+
+cd_wf_clean <-
+  cd_wf_clean %>% 
+  mutate(
+    tan_diff = tanner_t2 - tanner_t1
+  )
+
+cd_wf_clean %>% 
+  ggplot(aes(tan_diff)) +
+  geom_histogram(binwidth = .5) +
+  scale_y_continuous(breaks = seq.int(0, 35, 2)) +
+  labs(
+    x = "Change in pubertal stage"
+  )
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/tanner_change.png", width = 7, height = 5)
+
+cd_clean <-
+  cd_clean %>% 
+  left_join(
+    cd_wf_clean %>% 
+      select(ELS_ID, tan_diff),
+    by = "ELS_ID"
+  )
+
+cd_clean %>% 
+  filter(tan_diff == 0) %>% 
+  ggplot(aes(timepoint, dhea_clean, color = factor(ELS_ID))) +
+  geom_point() +
+  geom_path(aes(group = ELS_ID)) 
+  
+cd_clean %>% 
+  filter(tan_diff == 0) %>% 
+  ggplot(aes(timepoint, test_clean, color = factor(ELS_ID))) +
+  geom_point() +
+  geom_path(aes(group = ELS_ID))
+
+cd_wf_clean %>% 
+  summarise(
+    mean(tan_diff, na.rm = TRUE),
+    sd(tan_diff, na.rm = TRUE)
+  )
+```
+
+
 ```{r demographics_1, include=FALSE}
 cd_descriptives <- 
   cd_clean %>% 
@@ -220,6 +273,9 @@ cd_descriptives <-
       cort_clean,
       dhea_clean,
       test_clean,
+      cort_raw,
+      dhea_raw,
+      test_raw,
       inr_t1,
       sumsev_threat_t1,
       sumsev_threat_t2
@@ -240,6 +296,9 @@ cd_descriptives <-
           cort_clean,
           dhea_clean,
           test_clean,
+          cort_raw,
+          dhea_raw,
+          test_raw,
           inr_t1,
           sumsev_threat_t1,
           sumsev_threat_t2
@@ -262,6 +321,9 @@ cd_descriptives <-
           cort_clean,
           dhea_clean,
           test_clean,
+          cort_raw,
+          dhea_raw,
+          test_raw,
           inr_t1,
           sumsev_threat_t1,
           sumsev_threat_t2
@@ -285,6 +347,9 @@ cd_descriptives <-
           cort_clean,
           dhea_clean,
           test_clean,
+          cort_raw,
+          dhea_raw,
+          test_raw,
           inr_t1,
           sumsev_threat_t1,
           sumsev_threat_t2
@@ -308,6 +373,9 @@ cd_descriptives <-
           cort_clean,
           dhea_clean,
           test_clean,
+          cort_raw,
+          dhea_raw,
+          test_raw,
           inr_t1,
           sumsev_threat_t1,
           sumsev_threat_t2
@@ -331,6 +399,9 @@ cd_descriptives <-
           cort_clean,
           dhea_clean,
           test_clean,
+          cort_raw,
+          dhea_raw,
+          test_raw,
           inr_t1,
           sumsev_threat_t1,
           sumsev_threat_t2
@@ -517,6 +588,28 @@ read_csv(els_file) %>%
   arrange(desc(`Percent endorsed`)) %>% 
   select(-endorsed) %>% 
   knitr::kable()
+```
+
+```{r include=FALSE}
+read_csv(severity_file) %>% 
+  filter(ELS_ID %in% included_IDs) %>% 
+  filter(timepoint == "T1") %>% 
+  group_by(event, timepoint) %>% 
+  summarise_at(
+    vars(rating),
+    list(~mean, ~sd)
+  ) %>% 
+  arrange(timepoint)
+
+read_csv(severity_file) %>% 
+  filter(ELS_ID %in% included_IDs) %>% 
+  filter(timepoint == "T2") %>% 
+  group_by(event, timepoint) %>% 
+  summarise_at(
+    vars(rating),
+    list(~sum(!is.na(.)), ~(sum(!is.na(.))/143)*100,  ~mean, ~sd)
+  ) %>% 
+  arrange(timepoint)
 ```
 
 __Family income-to-needs ratio.__ As a measure of deprivation-related adversity, we calculated the income-to-needs ratio for each child’s family. The parent who accompanied the child to the laboratory session reported total family income over the previous 12 months and the number of people in their family. We collected income data in bins, with parents reporting income on a 10-point scale of <$5,000 to ≥ $150,000. To calculate the income-to-needs ratio, we divided the midpoint of the endorsed income bin by the low-income limit for Santa Clara county (80% of the median income) determined by the Department of Housing and Urban Development based on the number of people in the household (https://www.huduser.gov/portal/datasets/il/il2017/2017summary.odn). Based on having an income-to-needs ratio < 1, 26% (n=45) adolescents were “low-income.” 
@@ -1038,6 +1131,50 @@ cd_clean %>%
   )
 ```
 
+```{r t1t2_mod_sens_tan, include=FALSE}
+cd_clean_tan <-
+  cd_clean %>% 
+  filter(tan_diff > 0)
+
+contrasts(cd_clean_tan$timepoint) = c(0, 1) # T1 is baseline
+
+t1t2_mod1_tp_tan <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * timepoint +
+    (1 | ELS_ID),
+  data = cd_clean_tan
+)
+
+summary(t1t2_mod1_tp_tan)
+```
+
+## Associations between DHEA and cortisol in earlier versus later puberty: interval in years 
+
+```{r include=FALSE}
+cd_clean <-
+  cd_clean %>% 
+  mutate(
+    time = case_when(
+      timepoint == "T1" ~ 0,
+      timepoint == "T2" ~ interval_yr
+    )
+  )
+```
+
+```{r t1t2mod_t2_interval, warning=FALSE, include=FALSE}
+t1t2_mod1_interval <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(time) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+summary(t1t2_mod1_interval)
+
+#confint.merMod(t1t2_mod1_interval, method = "boot")
+```
+
+
 ## Associations between testosterone and cortisol in earlier versus later puberty
 
 ```{r t1t2mod_modelfit_test, warning=FALSE, include=FALSE}
@@ -1165,7 +1302,7 @@ t1t2_mod1_tp_test <- lmer(
 )
 
 summary(t1t2_mod1_tp_test)
-confint.merMod(t1t2_mod1_tp_test, method = "boot")
+#confint.merMod(t1t2_mod1_tp_test, method = "boot")
 
 contrasts(cd_clean$timepoint) = c(1, 0) # 2 is baseline
 
@@ -1177,7 +1314,7 @@ t1t2_mod2_tp_test <- lmer(
 )
 
 summary(t1t2_mod2_tp_test)
-confint.merMod(t1t2_mod2_tp_test, method = "boot")
+#confint.merMod(t1t2_mod2_tp_test, method = "boot")
 ```
 Results of a multi-level model indicated that testosterone did not interact with time point (dummy-coded) to explain cortisol (β=-0.05, SE=0.11, _t_(236.23)=-0.44, _p_=.664, 95% CI[-0.27, 0.17]). Results of formal model fitting indicated that interval in years between T1 and T2, use of medication, BMI, and child age at T1 did not improved model fit; however, time of collection and sex significantly improved model fit. Results were highly similar in sensitivity analyses controlling for time of collection and sex, in analyses excluding hormone values that were collected contemporaenous with the use of corticosteroids, and separate models conducted in boys and girls respectively. We present the simple associations between testosterone and cortisol at T1 and T2 for each sex in Figure 2. 
 
@@ -1270,6 +1407,35 @@ cd_clean %>%
     scales = "free",
     labeller = labeller(male = c("0" = "Girls", "1" = "Boys"))
   )
+
+```
+
+```{r t1t2_mod_sens_test, include=FALSE}
+contrasts(cd_clean_tan$timepoint) = c(0, 1) # T1 is baseline
+
+t1t2_mod1_tp_tan_test <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * timepoint +
+    (1 | ELS_ID),
+  data = cd_clean_tan
+)
+
+summary(t1t2_mod1_tp_tan_test)
+```
+
+## Associations between testosterone and cortisol in earlier versus later puberty: interval in years 
+
+```{r t1t2mod_t2_interval_test, warning=FALSE, include=FALSE}
+t1t2_mod1_interval_test <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(time) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+summary(t1t2_mod1_interval_test)
+
+#confint.merMod(t1t2_mod1_interval_test, method = "boot")
 
 ```
 
@@ -1486,6 +1652,22 @@ confint_coupling_mod_age_me <- as.data.frame(confint(coupling_mod_age_me))
 df_coupling_mod_age_me <- 
   broom::glance(coupling_mod_age_me) %>% 
   pull(df.residual)
+```
+
+```{r couple_me_sensitivity_tan, include=FALSE}
+cd_wf_clean_tan <-
+  cd_wf_clean %>% 
+  filter(tan_diff > 0)
+
+coupling_mod_tan_me <- lm(
+  scale(cort_slope_yr) ~
+    scale(dhea_slope_yr_win) +
+    scale(cort_clean_t1) +
+    scale(dhea_clean_t1),
+  data = cd_wf_clean_tan
+)
+
+summary(coupling_mod_tan_me)
 ```
 
 ```{r coupling_me_bysex}
@@ -1730,6 +1912,18 @@ coupling_mod1_test_me_summary <- summary(coupling_mod1_test_me)
 coupling_mod1_test_me_r2 <- coupling_mod1_test_me_summary$r.squared
 
 r2_chg_test_coupling <- coupling_mod1_test_me_r2 - coupling_mod1_base_test_r2
+```
+
+```{r couple_me_sensitivity_tan_test, include=FALSE}
+coupling_mod_tan_me_test <- lm(
+  scale(cort_slope_yr) ~
+    scale(test_slope_yr_win) +
+    scale(cort_clean_t1) +
+    scale(test_clean_t1),
+  data = cd_wf_clean_tan
+)
+
+summary(coupling_mod_tan_me_test)
 ```
 
 ```{r coupling_test_me_bysex}
@@ -1984,17 +2178,6 @@ coupling_mod1 <- lm(
   data = cd_wf_clean
 )
 
-coupling_mod1_test <- lm(
-  scale(cort_slope_yr) ~ 
-    scale(dhea_slope_yr_win) * 
-    scale(sumsev_threat_t1) +
-    scale(test_slope_yr_win) +
-    scale(test_clean_t1) +
-    scale(cort_clean_t1) +
-    scale(dhea_clean_t1),
-  data = cd_wf_clean
-)
-
 coupling_mod1_df <- format_lm_df(coupling_mod1)
 
 beta_int_coupling_mod1 <- 
@@ -2131,6 +2314,19 @@ df_coupling_mod_nosteroid <-
   pull(df.residual)
 ```
 
+```{r coupling_tan, include=FALSE}
+coupling_mod1_tan <- lm(
+  scale(cort_slope_yr) ~ 
+    scale(dhea_slope_yr_win) * 
+    scale(sumsev_threat_t1) +
+    scale(cort_clean_t1) +
+    scale(dhea_clean_t1),
+  data = cd_wf_clean_tan
+)
+
+summary(coupling_mod1_tan)
+```
+
 ```{r coupling_bysex}
 #boys
 coupling_mod1_boys <- lm(
@@ -2201,7 +2397,7 @@ In separate models conducted within boys and girls respectively, the estimates f
 coupling_mod1_resid <- lm(
   scale(cort_slope_yr) ~ 
     scale(cort_clean_t1) +
-    scale(dhea_clean_t1),
+    scale(dhea_clean_t1), 
   data = cd_wf_clean
 )
 
@@ -2243,7 +2439,7 @@ cd_wf_clean %>%
       cort_slope_resid
     )
   ) +
-  geom_point(size = 2, alpha = 1/2, aes(shape = male)) +
+  geom_point(alpha = 1/2, aes(shape = male, size = sumsev_threat_t1)) +
   geom_abline(
     data = int_slope_df,
     aes(
@@ -2257,18 +2453,44 @@ cd_wf_clean %>%
     labels = NULL,
     values = c(2, 1)
   ) +
-  guides(shape = FALSE) +
+  guides(shape = FALSE, size = FALSE) +
   scale_color_manual(
     labels = c("Lower (-1SD)", "Higher (+1SD)"),
     values = c("darkblue", "darkred")
   ) +
-  scale_y_continuous(breaks = seq.int(-2, 2.5, .5)) +
+  #scale_y_continuous(breaks = seq.int(-2, 2.5, .5)) +
+  theme_apa(base_size = 20) +
   labs(
     shape = NULL,
+    size = NULL,
     color = "Threat severity",
     x = "log DHEA slope from T1 to T2",
     y = "log Cortisol slope from T1 to T2\n(standardized residuals)"
   ) 
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/coupling_dhea_els.png", height = 6, width = 10)
+```
+
+## Association of non-threat severity with longitudinal coupling of DHEA and cortisol across the pubertal transition
+```{r include=FALSE}
+cd_wf_clean <-
+  cd_wf_clean %>% 
+  mutate(
+    nonthreat_t1 = sumsev_type_t1 - sumsev_threat_t1
+  )
+
+coupling_mod1_nonthreat <- lm(
+  scale(cort_slope_yr) ~ 
+    scale(dhea_slope_yr_win) * 
+    scale(nonthreat_t1) +
+    scale(cort_clean_t1) +
+    scale(dhea_clean_t1),
+  data = cd_wf_clean
+)
+
+summary(coupling_mod1_nonthreat)
+
+confint(coupling_mod1_nonthreat)
 ```
 
 ## Association of threat severity with longitudinal coupling of testosterone and cortisol across the pubertal transition
@@ -2553,11 +2775,11 @@ int_slope_test_df <-
 cd_wf_clean %>% 
   ggplot(
     aes(
-      test_slope_yr_win, 
+      scale(test_slope_yr_win), 
       cort_slope_test_resid
     )
   ) +
-  geom_point(size = 2, alpha = 1/2, aes(shape = male)) +
+  geom_point(alpha = 1/2, aes(shape = male, size = sumsev_threat_t1)) +
   geom_abline(
     data = int_slope_test_df,
     aes(
@@ -2567,23 +2789,27 @@ cd_wf_clean %>%
     ),
     size = 2
   ) +
-  scale_x_continuous(breaks = seq.int(-.5, .75, .25)) +
+  scale_x_continuous(breaks = seq.int(-2.5, 4, .5)) +
   scale_y_continuous(breaks = seq.int(-2, 2.5, .5)) +
   scale_shape_manual(
     labels = NULL,
     values = c(2, 1)
   ) +
-  guides(shape = FALSE) +
+  guides(shape = FALSE, size = FALSE) +
   scale_color_manual(
     labels = c("Lower (-1SD)", "Higher (+1SD)"),
     values = c("darkblue", "darkred")
   ) +
+  theme_apa(base_size = 20) +
   labs(
     shape = NULL,
+    size = NULL,
     color = "Threat severity",
     x = "log Testosterone slope from T1 to T2",
     y = "log Cortisol slope from T1 to T2\n(standardized residuals)"
   ) 
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/coupling_test_els.png", height = 6, width = 10)
 ```
 
 ```{r coupling_corticosteroid_test, include=FALSE}
@@ -2596,6 +2822,19 @@ coupling_mod1_nosteroid_test <- lm(
     scale(test_clean_t1),
   data = cd_wf_clean_nosteroid
 )
+```
+
+```{r coupling_tan_test, include=FALSE}
+coupling_mod1_tan_test <- lm(
+  scale(cort_slope_yr) ~ 
+    scale(test_slope_yr_win) * 
+    scale(sumsev_threat_t1) +
+    scale(cort_clean_t1) +
+    scale(test_clean_t1),
+  data = cd_wf_clean_tan
+)
+
+summary(coupling_mod1_tan_test)
 ```
 
 ```{r coupling_bysex_test}
@@ -2677,7 +2916,7 @@ cd_wf_clean %>%
       cort_slope_test_resid
     )
   ) +
-  geom_point(size = 2, alpha = 1/2, aes(shape = male)) +
+  geom_point(alpha = 1/2, aes(shape = male, size = sumsev_threat_t1)) +
   geom_smooth(method = "lm", se = FALSE, size = 2, color = "darkblue") +
   scale_shape_manual(
     labels = NULL,
@@ -2685,176 +2924,29 @@ cd_wf_clean %>%
   ) +
   scale_y_continuous(breaks = seq.int(-2, 2.5, .5)) +
   scale_x_continuous(breaks = seq.int(-.5, 1, .25)) +
-  guides(shape = FALSE) +
+  guides(shape = FALSE, size = FALSE) +
   labs(
     shape = NULL,
+    size = NULL,
     x = "log Testosterone slope from T1 to T2",
     y = "log Cortisol slope from T1 to T2\n(standardized residuals)"
   )  
+
+ggsave("~/Desktop/ELS/cort_dhea/cort_dhea_sync/coupling_test.png")
 ```
 
-
-```{r plot_coupling_inr_mod_test, warning=FALSE, fig.height=3, fig.width=6}
-coupling_test_resid_boys <- lm(
+## Association of non-threat severity with longitudinal coupling of testosterone and cortisol across the pubertal transition
+```{r include=FALSE}
+coupling_mod1_nonthreat_test <- lm(
   scale(cort_slope_yr) ~ 
+    scale(test_slope_yr_win) * 
+    scale(nonthreat_t1) +
     scale(cort_clean_t1) +
     scale(test_clean_t1),
-  data = cd_wf_clean_boys
+  data = cd_wf_clean
 )
 
-coupling_test_resid_girls <- lm(
-  scale(cort_slope_yr) ~ 
-    scale(cort_clean_t1) +
-    scale(test_clean_t1),
-  data = cd_wf_clean_girls
-)
+summary(coupling_mod1_nonthreat_test)
 
-cd_wf_clean <-
-  cd_wf_clean %>% 
-  add_residuals(coupling_test_resid_boys, var = "cort_slope_test_resid_boys") %>% 
-  add_residuals(coupling_test_resid_girls, var = "cort_slope_test_resid_girls")
-
-#save intercepts and slopes
-
-#inr centered 
-slope_inr_cent <- 
-  coupling_inr_mod_df_test$`scale(test_slope_yr_win)_estimate`
-
-int_inr_cent <- 
-  coupling_inr_mod_df_test$`(Intercept)_estimate`
-
-slope_inr_cent_boys <- 
-  coupling_inr_boys_test_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_cent_boys <-
-  coupling_inr_boys_test_df$`(Intercept)_estimate`
-
-slope_inr_cent_girls <- 
-  coupling_inr_girls_test_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_cent_girls <-
-  coupling_inr_girls_test_df$`(Intercept)_estimate`
-
-#inr low  
-slope_inr_lo <- 
-  coupling_inr_mod_lo_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_lo <- 
-  coupling_inr_mod_lo_df$`(Intercept)_estimate`
-
-slope_inr_lo_boys <- 
-  coupling_inr_boys_test_lo_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_lo_boys <-
-  coupling_inr_boys_test_lo_df$`(Intercept)_estimate`
-
-slope_inr_lo_girls <- 
-  coupling_inr_girls_test_lo_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_lo_girls <-
-  coupling_inr_girls_test_lo_df$`(Intercept)_estimate`
-
-
-#inr high  
-slope_inr_hi <- 
-  coupling_inr_mod_hi_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_hi <- 
-  coupling_inr_mod_hi_df$`(Intercept)_estimate`
-
-slope_inr_hi_boys <- 
-  coupling_inr_boys_test_hi_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_hi_boys <-
-  coupling_inr_boys_test_hi_df$`(Intercept)_estimate`
-
-slope_inr_hi_girls <- 
-  coupling_inr_girls_test_hi_df$`scale(test_slope_yr_win)_estimate`
-
-int_inr_hi_girls <-
-  coupling_inr_girls_test_hi_df$`(Intercept)_estimate`
-
-int_slope_inr_df <-
-  tibble(
-    "INR" = c("b", "a"),
-    "Intercept" = c(int_inr_hi, int_inr_lo),
-    "Slope" = c(slope_inr_hi, slope_inr_lo)
-    )
-
-intercepts_inr_bysex <- 
-  c(
-    int_inr_cent_boys, 
-    int_inr_hi_boys, 
-    int_inr_lo_boys,
-    int_inr_cent_girls, 
-    int_inr_hi_girls, 
-    int_inr_lo_girls
-  )
-
-slopes_inr_bysex <- 
-  c(
-    slope_inr_cent_boys,
-    slope_inr_hi_boys,
-    slope_inr_lo_boys,
-    slope_inr_cent_girls,
-    slope_inr_hi_girls,
-    slope_inr_lo_girls
-  )
-
-int_slope_inr_df_bysex <-
-  tibble(
-    "Sex" = c("Boys", "Boys", "Boys", "Girls", "Girls", "Girls"),
-    "INR" = c("b", "c", "a", "b", "c", "a"),
-    "Intercept" = intercepts_inr_bysex,
-    "Slope" = slopes_inr_bysex
-    )
-
-
-## plot 
-cd_wf_clean %>% 
-  ggplot(
-    aes(
-      test_slope_yr_win, 
-      cort_slope_test_resid
-    )
-  ) +
-  geom_point(size = 2, alpha = 1/2, aes(shape = male)) +
-  geom_abline(
-    data = int_slope_inr_df,
-    aes(
-      intercept = Intercept,
-      slope = Slope,
-      color = INR
-    ),
-    size = 2
-  ) +
-  scale_shape_manual(
-    labels = NULL,
-    values = c(2, 1)
-  ) +
-  scale_color_manual(
-    labels = c("Lower (-1SD)", "Higher (+1SD)"),
-    values = c("darkblue", "darkred")
-  ) +
-  scale_y_continuous(breaks = seq.int(-2, 2.5, .5)) +
-  scale_x_continuous(breaks = seq.int(-.5, 1, .25)) +
-  guides(shape = FALSE) +
-  labs(
-    shape = NULL,
-    color = "Income-to-needs ratio",
-    x = "log Testosterone slope from T1 to T2",
-    y = "log Cortisol slope from T1 to T2\n(standardized residuals)"
-  )  
+confint(coupling_mod1_nonthreat_test)
 ```
-
-# Discussion
-
-
-\newpage
-
-\begingroup
-\setlength{\parindent}{-0.5in}
-\setlength{\leftskip}{0.5in}
-
-<div id = "refs"></div>
-\endgroup

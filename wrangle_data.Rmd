@@ -37,6 +37,9 @@ hormones <-
   select(
     ELS_ID:birth_control,
     medication_binary,
+    testosterone_mean,
+    cortisol_mean,
+    dhea_mean,
     testosterone_mean_clean,
     cortisol_mean_clean,
     dhea_mean_clean
@@ -134,13 +137,6 @@ hormones_earlypuberty %>%
   filter(!is.na(testosterone_mean_clean)) %>% 
   ungroup() %>% 
   summarise(n_distinct(ELS_ID))
-
-x <- 
-hormones_earlypuberty %>% 
-  filter(timepoint == "T1") %>% 
-  filter(!is.na(testosterone_mean_clean)) 
-
-anti_join(included_T1, x, by = "ELS_ID")
 
 ## T2 numbers______________________________________________________
 
@@ -405,6 +401,9 @@ cd <-
   select(
     ELS_ID:birth_control,
     medication_binary,
+    cort_raw = cortisol_mean,
+    dhea_raw = dhea_mean,
+    test_raw = testosterone_mean,
     cort_clean = cortisol_mean_clean,
     dhea_clean = dhea_mean_clean,
     test_clean = testosterone_mean_clean,
@@ -504,6 +503,9 @@ cd_wf <-
   cd_t1 %>% 
   select(-interval_yr) %>% 
   rename(
+    dhea_raw_t1 = dhea_raw,
+    cort_raw_t1 = cort_raw,
+    test_raw_t1 = test_raw,
     dhea_clean_t1 = dhea_clean,
     cort_clean_t1 = cort_clean,
     test_clean_t1 = test_clean,
@@ -519,6 +521,9 @@ cd_wf <-
       select(
         ELS_ID,
         interval_yr,
+        dhea_raw_t2 = dhea_raw,
+        cort_raw_t2 = cort_raw,
+        test_raw_t2 = test_raw,
         dhea_clean_t2 = dhea_clean,
         cort_clean_t2 = cort_clean,
         test_clean_t2 = test_clean,
@@ -536,6 +541,7 @@ cd_wf <-
     dhea_slope_yr = (dhea_clean_t2 - dhea_clean_t1) / interval_yr,
     test_slope_yr = (test_clean_t2 - test_clean_t1) / interval_yr
   )
+
 ```
 
 ## Distributions of slope

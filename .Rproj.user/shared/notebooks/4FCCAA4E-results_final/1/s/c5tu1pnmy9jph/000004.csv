@@ -1,3 +1,0 @@
-"0","coupling_mod1_summary <- summary(coupling_mod1)"
-"0","coupling_mod1_r2 <- coupling_mod1_summary$r.squared"
-"0","r2_chg_threat_dhea_coupling <- coupling_mod1_r2 - coupling_mod1_me_r2"

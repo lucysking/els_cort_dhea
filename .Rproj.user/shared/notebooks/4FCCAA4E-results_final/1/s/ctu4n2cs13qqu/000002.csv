@@ -1,7 +1,0 @@
-"0","range_tanner <- "
-"0","  cd_clean %>% "
-"0","  filter(timepoint == ""T2"") %>% "
-"0","  summarise("
-"0","    min_tanner = min(tanner_av, na.rm = TRUE),"
-"0","    max_tanner = max(tanner_av, na.rm = TRUE)"
-"0","  )"

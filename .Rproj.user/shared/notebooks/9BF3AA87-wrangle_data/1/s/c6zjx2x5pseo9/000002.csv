@@ -7,7 +7,6 @@
 "0","  ) %>% "
 "0","  left_join(demo, by = c(""ELS_ID"", ""timepoint"", ""session_type"")) %>% "
 "0","  left_join(tanner, by = c(""ELS_ID"", ""timepoint"")) %>% "
-"0","  left_join(mnbs, by = ""ELS_ID"") %>% "
 "0","  filter(ELS_ID < 300, ELS_ID %in% keep_IDs) %>% "
 "0","  mutate("
 "0","    inr_t1 = if_else("
@@ -29,6 +28,9 @@
 "0","  select("
 "0","    ELS_ID:birth_control,"
 "0","    medication_binary,"
+"0","    cort_raw = cortisol_mean,"
+"0","    dhea_raw = dhea_mean,"
+"0","    test_raw = testosterone_mean,"
 "0","    cort_clean = cortisol_mean_clean,"
 "0","    dhea_clean = dhea_mean_clean,"
 "0","    test_clean = testosterone_mean_clean,"
@@ -50,4 +52,3 @@ cols(
 "
 "2","See spec(...) for full column specifications.
 "
-"2","Column `ELS_ID` has different attributes on LHS and RHS of join"

@@ -1,6 +1,0 @@
-"0","t_test_tanner <- t.test(cd_wf_clean$tanner_t2, cd_wf_clean$tanner_t1, paired = TRUE)"
-"0","t_test_bmi <- t.test(cd_wf_clean$bmi_t2, cd_wf_clean$bmi_t1, paired = TRUE)"
-"0","t_test_cort <- t.test(cd_wf_clean$cort_clean_t2, cd_wf_clean$cort_clean_t1, paired = TRUE)"
-"0","t_test_dhea <- t.test(cd_wf_clean$dhea_clean_t2, cd_wf_clean$dhea_clean_t1, paired = TRUE)"
-"0","t_test_test <- t.test(cd_wf_clean$test_clean_t2, cd_wf_clean$test_clean_t1, paired = TRUE)"
-"0","t_test_threat <- t.test(cd_wf_clean$sumsev_threat_t1, cd_wf_clean$sumsev_threat_t2, paired = TRUE)"
