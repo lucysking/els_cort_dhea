@@ -1,3 +1,0 @@
-"0","```r
-#confint.merMod(hc_0_sens, method = \"boot\", boot.type = \"perc\")
-```"

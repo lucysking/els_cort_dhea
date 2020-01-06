@@ -1,4 +1,0 @@
-"0","#Read in Data"
-"0","data_2017 <- read_csv(data_file)"
-"2","Error: '~/Desktop/Stats Project/Psych 10 Data/world-happiness-report/2017.csv' does not exist.
-"

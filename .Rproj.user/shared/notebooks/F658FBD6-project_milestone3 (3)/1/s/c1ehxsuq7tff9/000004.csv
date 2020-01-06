@@ -1,8 +1,0 @@
-"0","ggplot(data_2017Clean, aes(x = HealthZ, y = HappyZ)) + "
-"0","  geom_point()+"
-"0","  stat_smooth(method = ""lm"", col = ""red"")+"
-"0","  labs("
-"0","    x = ""Health Score (Z-score)"","
-"0","    y = ""Happiness Score (Z-score)"", "
-"0","    title = ""Health One of Three Largest Contributors to Happiness"""
-"0","  ) "

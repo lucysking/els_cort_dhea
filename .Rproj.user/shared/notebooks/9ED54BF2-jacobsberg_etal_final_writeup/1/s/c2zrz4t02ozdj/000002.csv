@@ -1,2 +1,0 @@
-"0","contingencytable %>% "
-"0","  mutate(stdRes = (n - 271.3)/sqrt(271.3))"

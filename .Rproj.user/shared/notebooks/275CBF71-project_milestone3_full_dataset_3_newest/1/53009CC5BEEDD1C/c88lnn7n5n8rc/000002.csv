@@ -1,4 +1,0 @@
-"0","ggplot(data_select_with_means, aes(x = feelings_mean, col = access, fill = access)) +"
-"0","  geom_density(alpha = 0.6)+"
-"0","  ggtitle('Lack of access to medical care increases negative feeling ratings') +"
-"0","  xlab('Mean feeling ratings from feeling scale')"

@@ -1,5 +1,0 @@
-"0","#frequency bar plot visualization by sex and age group (>25 and <25 years old - groupings for our hypothesis)"
-"0","ggplot(data, aes(factor(sex), fill = factor(age_group))) + geom_bar(position = ""dodge2"") + labs(title = ""Number of Injuries by Gender"", x = ""Gender"") + scale_fill_discrete("
-"0","                        name = ""Age Group"","
-"0","                         breaks=c(""FALSE"", ""TRUE""),"
-"0","                         labels=c(""Over 25 Years Old"", ""Under 25 Years Old""))"

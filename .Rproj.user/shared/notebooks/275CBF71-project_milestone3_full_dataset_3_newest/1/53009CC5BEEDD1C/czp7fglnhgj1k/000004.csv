@@ -1,6 +1,0 @@
-"0","accessVsFeelings_spread <-"
-"0","  feelings_summary %>% "
-"0","  gather(key, variable, mean:n) %>% "
-"0","  unite(new, access, key) %>% "
-"0","  spread(new, variable)"
-"0","accessVsFeelings_spread"

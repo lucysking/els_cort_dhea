@@ -1,6 +1,0 @@
-"0","write_csv(demo, ""~/Desktop/ELS/cort_dhea/data/data_final/demo.csv"")"
-"0","write_csv(tanner, ""~/Desktop/ELS/cort_dhea/data/data_final/tanner_t1t2.csv"")"
-"0","write_csv(cd, ""~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_all_20190509.csv"")"
-"0","write_csv(cd_comp, ""~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_20190509.csv"")"
-"0","write_csv(cd_wf, ""~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_all_wf_20190509.csv"")"
-"0","write_csv(cd_wf_comp, ""~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_wf_20190509.csv"")"

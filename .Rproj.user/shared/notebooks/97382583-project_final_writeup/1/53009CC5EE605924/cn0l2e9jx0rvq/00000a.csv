@@ -1,1 +1,0 @@
-"0","ggplot(data_2017Clean, aes(x = Happiness.Rank, y = Generosity)) + geom_col()"

@@ -1,3 +1,0 @@
-"0","interval <-"
-"0","  interval %>% "
-"0","  filter(interval_yr < 3)"

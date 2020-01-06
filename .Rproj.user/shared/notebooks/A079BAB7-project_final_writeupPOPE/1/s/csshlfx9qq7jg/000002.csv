@@ -1,2 +1,0 @@
-"0","finaldata <- finaldata %>% "
-"0","  filter(state != ""District of Columbia"")"

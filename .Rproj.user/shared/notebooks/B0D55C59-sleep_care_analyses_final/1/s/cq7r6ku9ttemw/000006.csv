@@ -1,8 +1,0 @@
-"0","```r
-```r
-data_wf %>% 
-  summarise(
-    median(education) #7 = Graduate or professional degree
-  )
-```
-```"

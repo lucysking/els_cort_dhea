@@ -1,6 +1,0 @@
-"0","finaldata <- ourdata %>%"
-"0"," "
-"0","  select(state, "
-"0","         avg_hatecrimes_per_100k_fbi, "
-"0","         share_non_white, "
-"0","         share_vote_trump) "

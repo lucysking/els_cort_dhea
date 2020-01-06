@@ -1,8 +1,0 @@
-"0","data_2017Clean <- data_2017Clean %>%"
-"0","mutate(HappyZ = (Happiness.Score - mean(Happiness.Score))/ sd(Happiness.Score),"
-"0","      GovZ = (Gov - mean(Gov))/ sd(Gov), "
-"0","       FamilyZ = (Family - mean(Family))/ sd(Family), "
-"0","       FreedomZ = (Freedom - mean(Freedom)) / sd(Freedom), "
-"0","       GenerosityZ = (Generosity - mean(Generosity))/ sd(Generosity), "
-"0","       EconomyZ = (Economy - mean(Economy))/ sd(Economy), "
-"0","       HealthZ = (Health - mean(Health))/ sd(Health)) "

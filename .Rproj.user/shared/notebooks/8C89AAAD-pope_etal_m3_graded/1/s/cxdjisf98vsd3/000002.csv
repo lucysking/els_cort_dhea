@@ -1,6 +1,0 @@
-"0","#Libaries"
-"0","#Load the packages you need here"
-"0","library(fivethirtyeight)"
-"0","library(tidyverse)"
-"0","#Files"
-"0","# e.g., data_file <- ""path"""

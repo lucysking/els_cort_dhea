@@ -1,2 +1,0 @@
-"0","  "
-"0","ggplot(finaldata, aes(hate_crimes_per_100k_splc)) + geom_histogram()  "

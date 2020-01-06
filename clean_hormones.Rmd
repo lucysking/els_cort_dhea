@@ -11,17 +11,17 @@ library(haven)
 library(corrr)
 library(readxl)
 
-source("~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/winsorize.R")
+source("~/Desktop/ELS/els_cort_dhea/winsorize.R")
 
 #Files
-hormone_info_file <- "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/ELS Hormone Master Sheet.xlsx"
-sex_file <- "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/els_t1_biological_sex.csv"
+hormone_info_file <- "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/ELS Hormone Master Sheet.xlsx"
+sex_file <- "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/els_t1_biological_sex.csv"
 
 cortisol_files  <-
   tibble(
     path = 
       list.files(
-        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/cortisol",
+        path = "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/4. Hormones/Results/Cortisol",
         pattern = "^Raw_",
         full.names = TRUE
       )
@@ -31,7 +31,7 @@ dhea_files  <-
   tibble(
     path = 
       list.files(
-        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/DHEA",
+        path = "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/4. Hormones/Results/DHEA",
         pattern = "^Raw_",
         full.names = TRUE
       )
@@ -41,7 +41,7 @@ testosterone_files  <-
   tibble(
     path = 
       list.files(
-        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/testosterone",
+        path = "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/4. Hormones/Results/Testosterone",
         pattern = "^Raw_",
         full.names = TRUE
       )
@@ -51,7 +51,7 @@ estradiol_files  <-
   tibble(
     path = 
       list.files(
-        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/estradiol",
+        path = "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/4. Hormones/Results/Estradiol",
         pattern = "^Raw_",
         full.names = TRUE
       )
@@ -61,7 +61,7 @@ progesterone_files  <-
   tibble(
     path = 
       list.files(
-        path = "/Volumes/mooddata/ELS_RDoC/Saliva Sampling/Hormones/Results/progesterone",
+        path = "~/Box/mooddata_nophi/ELS_RDoC/Saliva Sampling/4. Hormones/Results/Progesterone",
         pattern = "^Raw_",
         full.names = TRUE
       )
@@ -502,7 +502,7 @@ hormones_clean <-
     vars(
       rep1:mean
       ),
-    list("win" = ~winsorize), product = 3
+    funs("win" = winsorize), product = 3
   ) %>% 
   ungroup()
 ```
@@ -561,6 +561,7 @@ hormones_clean %>%
 ```{r}
 hormones_final <- 
   hormones_clean %>% 
+  #rowid_to_column() %>% 
   mutate(
     birth_control = if_else(
       timepoint == "T1" & is.na(birth_control), 
@@ -574,6 +575,7 @@ hormones_final <-
     timepoint,
     male,
     rep1:mean,
+    rep1_win:mean_win,
     rep1_clean = rep1_win_log,
     rep2_clean = rep2_win_log,
     mean_clean = mean_win_log,
@@ -587,29 +589,36 @@ hormones_final <-
     rep1, 
     rep2,
     mean,
+    rep1_win,
+    rep2_win,
+    mean_win,
     rep1_clean,
     rep2_clean,
     mean_clean,
     comment
   ) %>% 
   unite("measure_key", measure, key) %>% 
+  distinct(ELS_ID, measure_key, timepoint, session_type, .keep_all = TRUE) %>% 
   spread(measure_key, value) %>% 
   arrange(male, ELS_ID, timepoint)
-
 ```
 
 ```{r}
 write_csv(
   hormones_final, 
-  "~/Desktop/ELS/cort_dhea/data/data_final/hormones_final_20190506.csv"
+  "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/hormones_final_20191211.csv"
 ) 
 
 hormones_final %>% 
   filter(timepoint == "T1") %>% 
-  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean)) %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>% 
   ungroup() %>% 
   summarise(n_distinct(ELS_ID))
 
-
+hormones_final %>% 
+  filter(timepoint == "T2") %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>% 
+  ungroup() %>% 
+  summarise(n_distinct(ELS_ID))
 ```
 

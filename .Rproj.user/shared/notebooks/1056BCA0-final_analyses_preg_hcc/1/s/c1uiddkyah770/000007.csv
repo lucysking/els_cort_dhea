@@ -1,5 +1,0 @@
-"0","```r
-hcc_wf %>% 
-  count(primiparous) %>% 
-  mutate(per = n / sum(n))
-```"

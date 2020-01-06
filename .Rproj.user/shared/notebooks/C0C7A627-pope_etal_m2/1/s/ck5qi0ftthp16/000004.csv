@@ -1,1 +1,0 @@
-"0","ggplot(finaldata, aes(share_vote_trump)) + geom_histogram()"

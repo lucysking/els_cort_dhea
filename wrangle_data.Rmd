@@ -1,5 +1,5 @@
 ---
-title: "Primary Analyses"
+title: "Wrangle hormone data"
 author: "Lucy King"
 output: html_document
 ---
@@ -12,18 +12,19 @@ library(lubridate)
 library(modelr)
 
 #Files 
-hormones_file <- "~/Desktop/ELS/cort_dhea/data/data_final/hormones_final_20190506.csv"
-els_file <- "~/Desktop/ELS/stress_data/data/els_severity_scores_20190221.csv"
-tanner_t1_file <- "~/Desktop/ELS/cort_dhea/data/data_final/tanner.T1.sav"
-tanner_t2_s1_file <- "~/Desktop/ELS/cort_dhea/data/data_final/tanner_s1.T2.sav"
-tanner_t2_s2_file <- "~/Desktop/ELS/cort_dhea/data/data_final/tanner_s2.T2.sav"
-demo_t1_file <- "~/Desktop/ELS/cort_dhea/data/data_final/demographics_golden_standard.T1.sav"
-demo_t2_file <- "~/Desktop/ELS/cort_dhea/data/data_final/demographics_golden_standard.T2.sav"
-birthdate_file <- "~/Desktop/ELS/cort_dhea/data/data_final/ELS T1 Birthdates.sav"
+hormones_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/hormones_final_20191211.csv"
+els_file <- "~/Box/lucy_king_files/ELS/stress_data/data/els_severity_scores_20190221.csv"
+tanner_t1_file <- "~/Box/mooddata_nophi/ELS_RDoC/T1 Data/ELS T1 Questionnaires/T1 Child Questionnaires/tanner.T1.sav"
+tanner_t2_s1_file <- "~/Box/mooddata_nophi/ELS_RDoC/T2 Data/ELS T2 Questionnaires/T2 Child Questionnaires/Ready for Analyses/tanner_s1.T2.sav"
+tanner_t2_s2_file <- "~/Box/mooddata_nophi/ELS_RDoC/T2 Data/ELS T2 Questionnaires/T2 Child Questionnaires/Ready for Analyses/tanner_s2.T2.sav"
+demo_t1_file <- "~/Box/mooddata_nophi/ELS_RDoC/T1 Data/ELS T1 Demographics/demographics_golden_standard.T1.sav"
+demo_t2_file <- "~/Box/mooddata_nophi/ELS_RDoC/T2 Data/ELS T2 Demographics/demographics_golden_standard.T2.sav"
+birthdate_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/ELS T1 Birthdates.sav"
+included_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/included.xlsx"
 
 #Functions
-source("~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/winsorize.R")
-source("~/Desktop/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/identify_outliers_histogram.R")
+source("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/winsorize.R")
+source("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/els_cort_dhea/identify_outliers_histogram.R")
 ```
 
 # Read in data
@@ -37,6 +38,9 @@ hormones <-
   select(
     ELS_ID:birth_control,
     medication_binary,
+    testosterone_mean_win,
+    cortisol_mean_win,
+    dhea_mean_win,
     testosterone_mean,
     cortisol_mean,
     dhea_mean,
@@ -106,9 +110,6 @@ exclude_IDs <-
 
 ### counts for hormones and why missing
 ```{r}
-included_T1_file <- "~/Desktop/ELS/cort_dhea/data/data_final/included_T1.csv"
-included_T1 <- read_csv(included_T1_file)
-
 hormones_earlypuberty <-
   hormones %>% 
   filter(ELS_ID %in% keep_IDs)
@@ -116,8 +117,7 @@ hormones_earlypuberty <-
 ## T1 numbers______________________________________________________
 hormones_earlypuberty %>% 
   filter(timepoint == "T1") %>% 
-  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>% 
-  ungroup() %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>%
   summarise(n_distinct(ELS_ID))
 
 hormones_earlypuberty %>% 
@@ -137,13 +137,13 @@ hormones_earlypuberty %>%
   filter(!is.na(testosterone_mean_clean)) %>% 
   ungroup() %>% 
   summarise(n_distinct(ELS_ID))
+```
 
+```{r}
 ## T2 numbers______________________________________________________
-
 hormones_earlypuberty %>% 
   filter(timepoint == "T2") %>% 
-  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>% 
-  ungroup() %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>%
   summarise(n_distinct(ELS_ID))
 
 hormones_earlypuberty %>% 
@@ -163,21 +163,19 @@ hormones_earlypuberty %>%
   filter(!is.na(testosterone_mean_clean)) %>% 
   ungroup() %>% 
   summarise(n_distinct(ELS_ID))
+```
 
-
-## cortisol OR DHEA at T1 OR T2
-
+```{r}
+## cortisol OR DHEA OR testosterone at T1 OR T2
 hormones_earlypuberty %>% 
   filter(timepoint == "T2" | timepoint == "T1") %>% 
-  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>% 
-  ungroup() %>% 
+  filter(!is.na(dhea_mean_clean) | !is.na(cortisol_mean_clean) | !is.na(testosterone_mean_clean)) %>%
   summarise(n_distinct(ELS_ID))
 
 ## cortisol at T1 OR T2
 hormones_earlypuberty %>% 
   filter(timepoint == "T2" | timepoint == "T1") %>% 
   filter(!is.na(cortisol_mean_clean)) %>% 
-  ungroup() %>% 
   summarise(n_distinct(ELS_ID))
 ```
 
@@ -193,21 +191,19 @@ N = 3 additional qns testosterone at T1 (additional 3) = 168 at T1
 
 T2:
 
-N = 4/200 did not complete hormone samples, 13/200 dropped out at T2, 2/200 opted out, 15/200 timed out, 21/200 not yet returned,  2/200 qns dhea, cortisol, and testosterone = 143 at T2
-N = 6/140 additional qns cortisol = 136 cortisol at T2
-N = 3/140 additional qns dhea = 140 dhea at T2
-N = 0/140 qns additional testosterone = 143 dhea at T2
+N = 4/200 did not complete hormone samples, 13/200 dropped out at T2, 2/200 opted out, 32/200 timed out, 2/200 qns dhea, cortisol, and testosterone = 147 at T2
+N = 7/147 additional qns cortisol = 140 cortisol at T2
+N = 3/147 additional qns dhea = 144 dhea at T2
+N = 0/147 qns additional testosterone = 147 dhea at T2
 
 cortisl OR DHEA OR testosterone at either T1 OR T2:
 
 N = 22/200 did not complete dhea OR cortisol OR testosterone at T1 OR T2 = 178 analyzable 
 1/22 did not complete hormones samples at T1 or T2
 6/22 did not complete at T1; dropped out at T2
-6/22 did not complete at T1; timed out at T2
-7/22 did not complete at T1; not yet returned T2
+13/22 did not complete at T1; timed out at T2
 1/25 qns at T1; timed out at T2
 1/25 qns at T1 and T2
-
 
 ### Tanner T2
 *Given multiple sessions at T2, identify tanner scores associated with date of hormone collection. If no exact date match, use closest date.* 
@@ -404,6 +400,9 @@ cd <-
     cort_raw = cortisol_mean,
     dhea_raw = dhea_mean,
     test_raw = testosterone_mean,
+    cort_win = cortisol_mean_win,
+    dhea_win = dhea_mean_win,
+    test_win = testosterone_mean_win,
     cort_clean = cortisol_mean_clean,
     dhea_clean = dhea_mean_clean,
     test_clean = testosterone_mean_clean,
@@ -506,6 +505,9 @@ cd_wf <-
     dhea_raw_t1 = dhea_raw,
     cort_raw_t1 = cort_raw,
     test_raw_t1 = test_raw,
+    dhea_win_t1 = dhea_win,
+    cort_win_t1 = cort_win,
+    test_win_t1 = test_win,
     dhea_clean_t1 = dhea_clean,
     cort_clean_t1 = cort_clean,
     test_clean_t1 = test_clean,
@@ -516,7 +518,7 @@ cd_wf <-
     medication_t1 = medication_binary,
     corticosteroid_t1 = corticosteroid
   ) %>% 
-  left_join(
+  full_join(
     cd_t2 %>% 
       select(
         ELS_ID,
@@ -524,6 +526,9 @@ cd_wf <-
         dhea_raw_t2 = dhea_raw,
         cort_raw_t2 = cort_raw,
         test_raw_t2 = test_raw,
+        dhea_win_t2 = dhea_win,
+        cort_win_t2 = cort_win,
+        test_win_t2 = test_win,
         dhea_clean_t2 = dhea_clean,
         cort_clean_t2 = cort_clean,
         test_clean_t2 = test_clean,
@@ -537,15 +542,34 @@ cd_wf <-
     by = "ELS_ID"
   ) %>% 
   mutate(
-    cort_slope_yr = (cort_clean_t2 - cort_clean_t1) / interval_yr,
-    dhea_slope_yr = (dhea_clean_t2 - dhea_clean_t1) / interval_yr,
-    test_slope_yr = (test_clean_t2 - test_clean_t1) / interval_yr
+    tan_diff = tanner_t2 - tanner_t1,
+    cort_slope_tan = if_else(
+      !is.na(tan_diff) & tan_diff > 0, 
+      (cort_win_t2 - cort_win_t1) / tan_diff, NA_real_
+    ),
+    dhea_slope_tan = if_else(
+      !is.na(tan_diff) & tan_diff > 0,
+      (dhea_win_t2 - dhea_win_t1) / tan_diff, NA_real_
+    ),
+    test_slope_tan = if_else(
+      !is.na(tan_diff) & tan_diff > 0, 
+      (test_win_t2 - test_win_t1) / tan_diff, NA_real_
+    ),
+    cort_slope_yr = (cort_win_t2 - cort_win_t1) / interval_yr,
+    dhea_slope_yr = (dhea_win_t2 - dhea_win_t1) / interval_yr,
+    test_slope_yr = (test_win_t2 - test_win_t1) / interval_yr
   )
 
 ```
 
 ## Distributions of slope
 ```{r}
+identify_outliers_hist(cd_wf, cort_slope_tan)
+
+identify_outliers_hist(cd_wf, dhea_slope_tan)
+
+identify_outliers_hist(cd_wf, test_slope_tan)
+
 identify_outliers_hist(cd_wf, cort_slope_yr)
 
 identify_outliers_hist(cd_wf, dhea_slope_yr)
@@ -559,9 +583,25 @@ identify_outliers_hist(cd_wf, test_slope_yr)
 cd_wf <-
   cd_wf %>% 
   mutate(
-    dhea_slope_yr_win = winsorize(dhea_slope_yr, 3),
-    test_slope_yr_win = winsorize(test_slope_yr, 3)
+    cort_slope_tan_win = winsorize(cort_slope_tan, 2),
+    dhea_slope_tan_win = winsorize(dhea_slope_tan, 2),
+    test_slope_tan_win = winsorize(test_slope_tan, 2),
+    cort_slope_yr_win = winsorize(cort_slope_yr, 2),
+    dhea_slope_yr_win = winsorize(dhea_slope_yr, 2),
+    test_slope_yr_win = winsorize(test_slope_yr, 2)
   )
+
+identify_outliers_hist(cd_wf, cort_slope_tan_win)
+
+identify_outliers_hist(cd_wf, dhea_slope_tan_win)
+
+identify_outliers_hist(cd_wf, test_slope_tan_win)
+
+identify_outliers_hist(cd_wf, cort_slope_yr_win)
+
+identify_outliers_hist(cd_wf, dhea_slope_yr_win)
+
+identify_outliers_hist(cd_wf, test_slope_yr_win)
 ```
 
 ## Final clean data sets
@@ -583,12 +623,12 @@ cd_wf_comp <-
 ```
 
 ```{r}
-write_csv(demo, "~/Desktop/ELS/cort_dhea/data/data_final/demo.csv")
-write_csv(tanner, "~/Desktop/ELS/cort_dhea/data/data_final/tanner_t1t2.csv")
-write_csv(cd, "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_all_20190509.csv")
-write_csv(cd_comp, "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_20190509.csv")
-write_csv(cd_wf, "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_all_wf_20190509.csv")
-write_csv(cd_wf_comp, "~/Desktop/ELS/cort_dhea/data/data_final/cort_dhea_final_wf_20190509.csv")
+write_csv(demo, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/demo.csv")
+write_csv(tanner, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/tanner_t1t2.csv")
+write_csv(cd, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_all_20190509.csv")
+write_csv(cd_comp, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_final_20190509.csv")
+write_csv(cd_wf, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_all_wf_20190509.csv")
+write_csv(cd_wf_comp, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_final_wf_20190509.csv")
 ```
 
 

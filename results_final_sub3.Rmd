@@ -1,0 +1,3015 @@
+---
+title: "Covariation of waking cortisol with DHEA and testosterone across the pubertal transition: Effects of threat-related early life stress"
+output: 
+  html_notebook:
+  toc: true
+  toc_depth: 2
+  toc_float: true
+---
+
+```{r setup, }
+#Libraries
+library(papaja)
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(modelr)
+library(sjstats)
+#library(olsrr)
+library(broom)
+library(haven)
+library(corrr)
+library(ggcorrplot)
+library(corrplot)
+library(cowplot)
+
+#Files 
+cd_lf_all_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_all_20190509.csv"
+cd_lf_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_final_20190509.csv"
+cd_wf_all_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_all_wf_20190509.csv"
+cd_wf_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/cort_dhea_final_wf_20190509.csv"
+els_file <- "~/Box/lucy_king_files/ELS/stress_data/data/els_severity_scores_20190221.csv"
+severity_file <- "~/Box/lucy_king_files/ELS/stress_data/data/severity_by_event_20190825.csv"
+demo_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/demo.csv"
+tanner_file <- "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/tanner_t1t2.csv"
+
+#Themes
+theme_set(theme_apa())
+
+#Functions
+format_pval <- function(pval, digits = 3){
+  pval <- str_replace(round(signif(pval), digits), "0.", ".")
+  pval <- if_else(pval == 0, "<.001", paste0("=", pval))
+  return(pval)
+}
+
+format_lm_df <- function(mod) {
+  df <- broom::tidy(mod)
+  
+  df %>% 
+    gather(key, value, estimate:p.value) %>% 
+    unite(new, term, key) %>% 
+    spread(new, value)
+}
+
+set.seed(123)
+options(scipen = 999)
+```
+
+
+```{r read in data}
+cd_wf_all <-
+  read_csv(cd_wf_all_file)
+
+cd_wf_clean <-
+  read_csv(cd_wf_file) %>% 
+  mutate(
+    male = as.factor(male),
+    medication_t1 = as.factor(medication_t1),
+    medication_t2 = as.factor(medication_t2)
+  )
+
+cd_all <- 
+  read_csv(cd_lf_all_file) %>% 
+  mutate(
+    timepoint = as.factor(timepoint)
+  )
+
+cd_clean <- 
+  read_csv(cd_lf_file) %>% 
+  mutate(
+    timepoint = as.factor(timepoint),
+    male = as.factor(male),
+    medication_binary = as.factor(medication_binary)
+  )
+```
+```{r person_center}
+# create person-mean-centered variable for tanner stage and average across t1 and t2 for other time-varying covariates
+cd_wf_clean <-
+  cd_wf_clean %>% 
+  mutate(
+    tan_diff = if_else(
+      !is.na(tanner_t2) & !is.na(tanner_t1),
+      tanner_t2 - tanner_t1, NA_real_
+    ),
+    dhea_diff = if_else(
+      !is.na(dhea_clean_t2) & !is.na(dhea_clean_t1),
+      dhea_clean_t2 - dhea_clean_t1, NA_real_
+    ),
+    test_diff = if_else(
+      !is.na(test_clean_t2) & !is.na(test_clean_t1),
+      test_clean_t2 - test_clean_t1, NA_real_
+    )
+  )
+
+cd_clean <- 
+  cd_clean %>% 
+  left_join(
+    cd_wf_clean %>% 
+      filter(
+        # prevents from merging a difference score for those with hormones at only 1 timepoint (do not want to model their change)
+        !is.na(cort_clean_t2) | !is.na(dhea_clean_t2) | !is.na(test_clean_t2),
+        !is.na(cort_clean_t1) | !is.na(dhea_clean_t1) | !is.na(test_clean_t1)
+      ) %>% 
+      select(ELS_ID, tan_diff, dhea_diff, test_diff), 
+    by = "ELS_ID"
+  ) %>% 
+  group_by(ELS_ID) %>% 
+  mutate(
+     time = case_when(
+      !is.na(interval_yr) & timepoint == "T1" ~ 0,
+      !is.na(interval_yr) & timepoint == "T2" ~ interval_yr,
+      TRUE ~ NA_real_
+    ), 
+    time_per_cent = if_else(
+      !is.na(interval_yr),
+      time - mean(time), NA_real_
+    ),
+    dhea_per_cent = if_else(
+      !is.na(dhea_diff),
+      dhea_clean - mean(dhea_clean), NA_real_
+    ),
+    test_per_cent = if_else(
+      !is.na(test_diff),
+      test_clean - mean(test_clean), NA_real_
+    ),
+    tan_per_cent = if_else(
+      !is.na(tan_diff),
+      tanner_av - mean(tanner_av), NA_real_
+    ),
+    tan_diff_lg = case_when(
+      timepoint == "T1" & !is.na(tan_diff) ~ 0,
+      timepoint == "T2" ~ tan_diff,
+      TRUE ~ NA_real_     
+    ),
+    age_av_t1t2 = mean(child_age, na.rm = TRUE),
+    dhea_av_t1t2 = mean(dhea_clean, na.rm = TRUE),
+    test_av_t1t2 = mean(test_clean, na.rm = TRUE),
+    tanner_av_t1t2 = mean(tanner_av, na.rm = TRUE),
+    timecoll_av_t1t2 = mean(time_collection, na.rm = TRUE),
+    bmi_av_t1t2 = mean(bmi, na.rm = TRUE),
+    age_av_t1t2 = mean(child_age, na.rm = TRUE)
+  ) %>% 
+  ungroup() 
+```
+
+# Methods
+
+## Participants
+
+```{r participants}
+#distinct IDs at each timepoint 
+cd_clean %>% 
+  group_by(timepoint) %>% 
+  summarise(
+    n_distinct(ELS_ID)
+  )
+
+# distinct IDs at either timepoint  
+cd_clean %>% 
+  summarise(n_distinct(ELS_ID))
+```
+
+```{r missing_data_compare, }
+all_els_demo <-
+  read_csv(els_file) %>% 
+  select(ELS_ID, sumsev_threat_t1, sumsev_threat_t2, sumsev_type_t1) %>% 
+  left_join(
+    read_csv(demo_file, na = c("999", "888")) %>% 
+      filter(timepoint == "T1"),
+    by = "ELS_ID"
+  ) %>% 
+  left_join(distinct_IDs_all, by = "ELS_ID") %>% 
+  mutate(
+    included = if_else(
+      is.na(included), 0, included
+    )
+  ) %>% 
+  mutate_at(
+    vars(bmi, inr_t1),
+    as.double
+  ) %>% 
+  left_join(
+    read_csv(tanner_file) %>% 
+      filter(timepoint == "T1", early_puberty == TRUE) %>% 
+      distinct(ELS_ID, tanner_av, .keep_all = TRUE),
+    by = "ELS_ID"
+  ) %>% 
+  distinct(ELS_ID, sumsev_threat_t1, .keep_all = TRUE)
+
+all_els_demo %>% 
+  group_by(included) %>% 
+  summarise_at(
+    vars(
+      sumsev_threat_t1,
+      sumsev_threat_t2,
+      inr_t1,
+      bmi,
+      tanner_av
+    ),
+    funs(mean(., na.rm = TRUE))
+  )
+  
+t.test(sumsev_threat_t1 ~ included, data = all_els_demo)
+t.test(sumsev_threat_t2 ~ included, data = all_els_demo)
+t.test(bmi ~ included, data = all_els_demo)
+t.test(inr_t1 ~ included, data = all_els_demo)
+t.test(tanner_av ~ included, data = all_els_demo)
+```
+
+
+```{r interval_dis, }
+cd_wf_clean %>% 
+  ggplot(aes(interval_yr)) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq.int(1, 3, .25)) +
+  labs(
+    x = "T1 to T2 interval (years)"
+  )
+
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/interval_dist.png", width = 7, height = 5)
+```
+
+
+```{r tanner_dis}
+cd_clean %>% 
+  ggplot(aes(tanner_av)) +
+  geom_histogram(binwidth = .5) +
+  facet_grid(.~timepoint)
+
+cd_clean %>% 
+  ggplot(aes(tanner_av, fill = timepoint)) +
+  geom_density(alpha = 1/2) +
+  labs(
+    fill = "",
+    x = "Tanner stage"
+  )
+
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/tanner_dist.png", width = 7, height = 5)
+
+cd_wf_clean %>% 
+  ggplot(aes(tan_diff)) +
+  geom_histogram(binwidth = .5) +
+  scale_y_continuous(breaks = seq.int(0, 35, 2)) +
+  labs(
+    x = "Change in Tanner stage from T1 to T2"
+  )
+
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/tanner_change.png", width = 7, height = 5)
+
+cd_clean %>% 
+  filter(tan_diff == 0) %>% 
+  ggplot(aes(timepoint, dhea_clean, color = factor(ELS_ID))) +
+  geom_point() +
+  geom_path(aes(group = ELS_ID)) 
+  
+cd_clean %>% 
+  filter(tan_diff == 0) %>% 
+  ggplot(aes(timepoint, test_clean, color = factor(ELS_ID))) +
+  geom_point() +
+  geom_path(aes(group = ELS_ID))
+
+cd_wf_clean %>% 
+  summarise(
+    mean(tan_diff, na.rm = TRUE),
+    sd(tan_diff, na.rm = TRUE)
+  )
+```
+
+
+```{r demographics_1, }
+cd_descriptives <- 
+  cd_clean %>% 
+  filter(timepoint == "T1") %>% 
+  group_by(male) %>% 
+  summarise_at(
+    vars(
+      child_age, 
+      tanner_av,
+      bmi, 
+      cort_win,
+      dhea_win,
+      test_win,
+      time_collection,
+      inr_t1,
+      sumsev_threat_t1,
+      sumsev_threat_t2
+    ),
+    funs(sum(!is.na(.)))
+  ) %>% 
+  gather(variable, n, child_age:sumsev_threat_t2) %>% 
+  rename(n_T1 = n) %>% 
+  left_join(
+    cd_clean %>% 
+      filter(timepoint == "T2") %>% 
+      group_by(male) %>% 
+      summarise_at(
+        vars(
+          child_age, 
+          tanner_av,
+          bmi, 
+          cort_win,
+          dhea_win,
+          test_win,
+          cort_raw,
+          time_collection,
+          inr_t1,
+          sumsev_threat_t1,
+          sumsev_threat_t2
+        ),
+        funs(sum(!is.na(.)))
+      ) %>% 
+      gather(variable, n, child_age:sumsev_threat_t2) %>% 
+      rename(n_T2 = n),
+    by = c("variable", "male")
+  ) %>% 
+  left_join(
+    cd_clean %>% 
+      filter(timepoint == "T1") %>% 
+      group_by(male) %>% 
+      summarise_at(
+        vars(
+          child_age, 
+          tanner_av,
+          bmi, 
+          cort_win,
+          dhea_win,
+          test_win,
+          time_collection,
+          inr_t1,
+          sumsev_threat_t1,
+          sumsev_threat_t2
+        ),
+        funs(mean),
+        na.rm = TRUE
+      ) %>% 
+      gather(variable, Mean, child_age:sumsev_threat_t2) %>% 
+      rename(Mean_T1 = Mean),
+    by = c("variable", "male")
+  ) %>% 
+  left_join(
+    cd_clean %>% 
+      filter(timepoint == "T2") %>% 
+      group_by(male) %>% 
+      summarise_at(
+        vars(
+          child_age, 
+          tanner_av,
+          bmi, 
+          cort_win,
+          dhea_win,
+          test_win,
+          time_collection,
+          inr_t1,
+          sumsev_threat_t1,
+          sumsev_threat_t2
+        ),
+        funs(mean),
+        na.rm = TRUE
+      ) %>% 
+      gather(variable, Mean, child_age:sumsev_threat_t2) %>% 
+      rename(Mean_T2 = Mean),
+    by = c("variable", "male")
+  ) %>% 
+  left_join(
+    cd_clean %>% 
+      group_by(male) %>% 
+      filter(timepoint == "T1") %>% 
+      summarise_at(
+        vars(
+          child_age, 
+          tanner_av,
+          bmi, 
+          cort_win,
+          dhea_win,
+          test_win,
+          time_collection,
+          inr_t1,
+          sumsev_threat_t1,
+          sumsev_threat_t2
+        ),
+        funs(sd),
+        na.rm = TRUE
+      ) %>% 
+      gather(variable, SD, child_age:sumsev_threat_t2) %>% 
+    rename(SD_T1 = SD),
+    by = c("variable", "male") 
+  ) %>% 
+  left_join(
+    cd_clean %>% 
+      group_by(male) %>% 
+      filter(timepoint == "T2") %>% 
+      summarise_at(
+        vars(
+          child_age, 
+          tanner_av,
+          bmi, 
+          cort_win,
+          dhea_win,
+          test_win,
+          time_collection,
+          inr_t1,
+          sumsev_threat_t1,
+          sumsev_threat_t2
+        ),
+        funs(sd),
+        na.rm = TRUE
+      ) %>% 
+      gather(variable, SD, child_age:sumsev_threat_t2) %>% 
+      rename(SD_T2 = SD),
+    by = c("variable", "male")
+  ) %>% 
+  mutate_at(
+    vars(starts_with("Mean"), starts_with("SD")),
+    funs(round), digits = 2
+  ) %>% 
+  unite("T1 Mean (SD)", Mean_T1, SD_T1) %>% 
+  unite("T2 Mean (SD)", Mean_T2, SD_T2)  %>% 
+  mutate_at(
+    vars(`T1 Mean (SD)`, `T2 Mean (SD)`),
+    funs(
+      str_replace(
+        .,
+        "_", " ("
+      )
+    )
+  ) %>% 
+  mutate_at(
+    vars(`T1 Mean (SD)`, `T2 Mean (SD)`),
+    funs(
+      paste0(. , ")")
+    )
+  ) %>% 
+  select(
+    Measure = variable,
+    Sex = male,
+    everything()
+  ) %>% 
+  mutate(
+    Sex = recode(
+      Sex,
+      "0" = "Female",
+      "1" = "Male"
+    )
+  )
+```
+
+```{r descriptives_2_table}
+race_ethn_descriptives <- 
+  cd_clean %>% 
+  filter(timepoint == "T1") %>% 
+  group_by(male) %>% 
+  count(
+    race_pr
+  ) %>% 
+  mutate(
+    race_pr = case_when(
+      race_pr == 1 ~ "Caucasian",
+      race_pr == 2 ~ "African American",
+      race_pr == 3 ~ "Hispanic",
+      race_pr == 4 ~ "Asian",
+      race_pr == 5 ~ "Biracial",
+      race_pr == 6 ~ "Other",
+      TRUE ~ "Not reported"
+    )
+  ) %>% 
+  rename(measure = race_pr) %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>% 
+  rename(
+    Measure = measure,
+    n_T1 = n,
+    Sex = male
+  ) %>% 
+  mutate(
+    Sex = recode(
+      Sex,
+      "0" = "Female",
+      "1" = "Male"
+    )
+  ) %>% 
+  select(
+    Measure,
+    everything()
+  )
+
+cd_descriptives <-
+  cd_descriptives %>% 
+  bind_rows(race_ethn_descriptives)
+```
+
+```{r demographics_1_table}
+cd_descriptives %>% 
+  knitr::kable()
+```
+
+```{r demographics_sex, }
+cd_clean %>% 
+  filter(timepoint == "T1") %>% 
+  count(male) %>% 
+  mutate(prop = round(n / sum(n), 2))
+```
+
+```{r count_lowincome, }
+cd_clean %>% 
+  distinct(ELS_ID, inr_t1) %>% 
+  count(inr_t1 < 1) %>% 
+  mutate(
+    prop = n / sum(n)
+  )
+```
+
+## Procedure
+```{r interval}
+interval_summary <- 
+  cd_wf_clean %>% 
+  summarise(
+    mean_interval = mean(interval_yr, na.rm = TRUE),
+    sd_interval = sd(interval_yr, na.rm = TRUE),
+    min_interval = min(interval_yr, na.rm = TRUE),
+    max_interval = max(interval_yr, na.rm = TRUE)
+  )
+
+interval_summary
+```
+
+
+## Measures
+```{r tanner}
+cd_clean %>% 
+  filter(timepoint == "T2") %>% 
+  summarise(
+    min_tanner = min(tanner_av, na.rm = TRUE),
+    max_tanner = max(tanner_av, na.rm = TRUE)
+  )
+
+cd_clean %>% 
+  filter(timepoint == "T1") %>% 
+  count(is.na(tanner_av))
+
+cd_clean %>% 
+  filter(timepoint == "T2") %>% 
+  count(is.na(tanner_av))
+```
+
+```{r included_ids}
+included_IDs <- 
+  cd_clean %>% 
+  distinct(ELS_ID) %>% 
+  pull()
+```
+
+```{r stress_table}
+read_csv(els_file) %>% 
+  filter(ELS_ID %in% included_IDs) %>% 
+  select(
+    `Community verbal conflict ` = comm_arg_t1,
+    `Community instability` = comm_inst_t1,
+    `Community violence` = comm_phys_t1,
+    Bullying = bully_t1,
+    `Threats of domestic violence` = thrt_domvio_t1,
+    `Threats of physical abuse` = thrt_phys_ab_t1,
+    `Kidnapping` = kidnap_t1,
+    `Family verbal conflict` =  parent_arg_t1,
+    `Domestic violence` = dom_viol_t1,
+    `War or terrorism` = war_terr_t1,
+    `Emotional abuse` = emo_ab_t1,
+    `Physical abuse` = phys_ab_t1,
+    `Sexual abuse` = sex_ab_t1,
+    `Witness sexual abuse` = wit_sexab_t1, 
+    `Mugging or robbery` = mug_rob_t1
+  ) %>% 
+  gather(type, endorsed) %>% 
+  count(type, endorsed) %>% 
+  group_by(type) %>% 
+  mutate(
+    `Percent endorsed` = round(((n / sum(n)) * 100), 0)
+  ) %>% 
+  rename(Type = type) %>% 
+  filter(endorsed == 1) %>% 
+  arrange(desc(`Percent endorsed`)) %>% 
+  select(-endorsed) %>% 
+  knitr::kable()
+```
+
+```{r severity_table}
+read_csv(severity_file) %>% 
+  filter(ELS_ID %in% included_IDs) %>% 
+  filter(timepoint == "T1") %>% 
+  group_by(event, timepoint) %>% 
+  summarise_at(
+    vars(rating),
+    funs(mean, sd)
+  ) %>% 
+  arrange(timepoint)
+
+read_csv(severity_file) %>% 
+  filter(ELS_ID %in% included_IDs) %>% 
+  filter(timepoint == "T2") %>% 
+  group_by(event, timepoint) %>% 
+  summarise_at(
+    vars(rating),
+    funs(sum(!is.na(.)), (sum(!is.na(.))/143)*100,  mean, sd)
+  ) %>% 
+  arrange(timepoint)
+```
+
+# Results
+
+
+```{r medication_counts}
+cd_clean %>% 
+  group_by(timepoint) %>% 
+  count(medication_binary) %>%
+  mutate(prop = round(n / sum(n), 2))
+
+cd_clean %>% 
+  group_by(timepoint) %>% 
+  count(corticosteroid) %>%
+  mutate(prop = round(n / sum(n), 2))
+
+cd_clean %>% 
+  group_by(timepoint) %>% 
+  count(birth_control) %>%
+  mutate(prop = round(n / sum(n), 2))
+```
+
+```{r correlations, include=TRUE}
+cd_wf_clean %>% 
+  select(
+    sumsev_threat_t1,
+    sumsev_threat_t2,
+    inr_t1,
+    tanner_t1,
+    tanner_t2,
+    bmi_t1,
+    bmi_t2,
+    child_age_t1,
+    interval_yr,
+    cort_clean_t1,
+    cort_clean_t2,
+    dhea_clean_t1,
+    dhea_clean_t2,
+    test_clean_t1,
+    test_clean_t2
+  ) %>% 
+  correlate() %>% 
+  fashion()
+
+cd_wf_clean %>% 
+  select(
+    tanner_t1,
+    tanner_t2,
+    cort_clean_t1,
+    cort_clean_t2,
+    dhea_clean_t1,
+    dhea_clean_t2,
+    test_clean_t1,
+    test_clean_t2
+  ) %>% 
+  correlate() %>% 
+  fashion()
+
+# DHEA ~ tanner
+cor.test(cd_wf_clean$dhea_clean_t1, cd_wf_clean$tanner_t1)
+cor.test(cd_wf_clean$dhea_clean_t2, cd_wf_clean$tanner_t2)
+
+# testosterone ~ tanner
+cor.test(cd_wf_clean$test_clean_t1, cd_wf_clean$tanner_t1)
+cor.test(cd_wf_clean$test_clean_t2, cd_wf_clean$tanner_t2)
+
+# cortisol ~ tanner
+cor.test(cd_wf_clean$cort_clean_t1, cd_wf_clean$tanner_t1)
+cor.test(cd_wf_clean$cort_clean_t2, cd_wf_clean$tanner_t2)
+```
+
+## Sample characteristics
+```{r time_ttests}
+t.test(cd_wf_clean$tanner_t2, cd_wf_clean$tanner_t1, paired = TRUE)
+
+t.test(cd_wf_clean$bmi_t2, cd_wf_clean$bmi_t1, paired = TRUE)
+
+t.test(cd_wf_clean$cort_clean_t2, cd_wf_clean$cort_clean_t1, paired = TRUE)
+
+t.test(cd_wf_clean$dhea_clean_t2, cd_wf_clean$dhea_clean_t1, paired = TRUE)
+
+t.test(cd_wf_clean$test_clean_t2, cd_wf_clean$test_clean_t1, paired = TRUE)
+
+t.test(cd_wf_clean$sumsev_threat_t1, cd_wf_clean$sumsev_threat_t2, paired = TRUE)
+
+```
+
+```{r hormones_tan}
+cort_mod_tan <-
+  lmer(
+    scale(cort_clean) ~
+      scale(tan_per_cent) +
+      scale(tanner_av_t1t2) +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(cort_mod_tan)
+#confint.merMod(cort_mod_tan, method = "boot")
+
+dhea_mod_tan <-
+  lmer(
+    scale(dhea_clean) ~
+      scale(tan_per_cent) +
+      scale(tanner_av_t1t2) +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(dhea_mod_tan)
+#confint.merMod(dhea_mod_tan, method = "boot")
+
+test_mod_tan <-
+  lmer(
+    scale(test_clean) ~
+      scale(tan_per_cent) +
+      scale(tanner_av_t1t2) +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(test_mod_tan)
+confint.merMod(test_mod_tan, method = "boot")
+```
+
+```{r sex_diff_stress}
+# sex differences: stress
+t_test_stress_T1 <- t.test(cd_clean$sumsev_threat_t1 ~ cd_clean$male)
+t_test_stress_T2 <- t.test(cd_clean$sumsev_threat_t2 ~ cd_clean$male)
+```
+
+```{r sex_diff_interval}
+#sex differences interval
+t_test_interval <- t.test(cd_clean$interval_yr ~ cd_clean$male)
+```
+
+```{r sex_diff_tanner}
+# sex differences: tanner
+tanner_sex_mod <-
+  lmer(
+    tanner_av ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(tanner_sex_mod)
+```
+
+```{r sex_diff_bmi}
+# sex differences: BMI
+bmi_sex_mod <-
+  lmer(
+    bmi ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(bmi_sex_mod)
+```
+
+```{r sex_diff_DHEA}
+# sex differences: DHEA
+
+## timepoint____________________________________________________________________
+dhea_sex_mod <-
+  lmer(
+    dhea_clean ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(dhea_sex_mod)
+
+## tanner_______________________________________________________________________
+dhea_sex_mod_tan <-
+  lmer(
+    dhea_clean ~
+      male * scale(tan_per_cent) +
+      male * scale(tanner_av_t1t2) +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(dhea_sex_mod_tan)
+```
+
+```{r sex_diff_cort}
+# sex differences: cortisol
+contrasts(cd_clean$timepoint) = c(0, 1) #T1 is baseline
+contrasts(cd_clean$male) = c(0, 1) #Female is baseline
+
+## timepoint____________________________________________________________________
+cort_sex_mod_1 <-
+  lmer(
+    cort_clean ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(cort_sex_mod_1)
+std_beta(cort_sex_mod_1)
+
+contrasts(cd_clean$male) = c(1, 0) #Male is baseline
+
+cort_sex_mod_2 <-
+  lmer(
+    cort_clean ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+summary(cort_sex_mod_2)
+std_beta(cort_sex_mod_2)
+
+# tanner________________________________________________________________________
+contrasts(cd_clean$male) = c(0, 1)
+cort_mod_tan_sex_girls <-
+  lmer(
+    scale(cort_clean) ~
+      scale(tan_per_cent) * male +
+      scale(tanner_av_t1t2) * male +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(cort_mod_tan_sex_girls)
+#confint.merMod(cort_mod_tan_sex_girls, method = "boot")
+
+contrasts(cd_clean$male) = c(1, 0)
+cort_mod_tan_sex_boys <-
+  lmer(
+    scale(cort_clean) ~
+      scale(tan_per_cent) * male +
+      scale(tanner_av_t1t2) * male +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(cort_mod_tan_sex_boys)
+#confint.merMod(cort_mod_tan_sex_boys, method = "boot")
+```
+
+```{r sex_diff_test}
+# sex differences: testosterone
+contrasts(cd_clean$timepoint) = c(0, 1) #T1 is baseline
+contrasts(cd_clean$male) = c(0, 1) #Female is baseline
+
+## timepoint____________________________________________________________________
+test_sex_mod_1 <-
+  lmer(
+    test_clean ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(test_sex_mod_1)
+std_beta(test_sex_mod_1)
+
+contrasts(cd_clean$timepoint) = c(1, 0) #T2 is baseline
+
+test_sex_mod_2 <-
+  lmer(
+    test_clean ~
+      male * timepoint +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(test_sex_mod_2)
+std_beta(test_sex_mod_2)
+
+# tanner________________________________________________________________________
+contrasts(cd_clean$male) = c(0, 1)
+test_mod_tan_girls <-
+  lmer(
+    scale(test_clean) ~
+      scale(tan_per_cent) * male +
+      scale(tanner_av_t1t2) * male +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(test_mod_tan_girls)
+std_beta(test_mod_tan_girls)
+
+contrasts(cd_clean$male) = c(1, 0)
+test_mod_tan_boys <-
+  lmer(
+    scale(test_clean) ~
+      scale(tan_per_cent) * male +
+      scale(tanner_av_t1t2) * male +
+      (1|ELS_ID),
+    data = cd_clean
+  )
+
+summary(test_mod_tan_boys)
+std_beta(test_mod_tan_boys)
+```
+
+```{r plot_sexdifferences_tp}
+sex_diff_tp_plot <- 
+  cd_clean %>% 
+  select(timepoint, male, cort_clean:test_clean) %>% 
+  gather(hormone, value, cort_clean:test_clean) %>% 
+  mutate(
+    hormone = recode(
+      hormone,
+      cort_clean = "log Cortisol\n(µg/dL)",
+      dhea_clean = "log DHEA\n(pg/mL)",
+      test_clean = "log Testosterone\n(pg/mL)"
+    )
+  ) %>% 
+  ggplot(aes(timepoint, value, fill = male)) +
+  geom_violin(draw_quantiles = .5, alpha = 3/4) +
+  scale_y_continuous(breaks = seq.int(-4, 8, 1), expand = c(0, 1)) +
+  scale_fill_manual(
+    values = c("darkred", "darkblue"),
+    labels = c("Girls", "Boys")
+  ) +
+  theme_apa(box = TRUE) +
+  labs(
+    x = "Panel A: Time-point of assessment",
+    y = NULL,
+    fill = NULL
+  ) +
+  facet_wrap(.~hormone, scales = "free") 
+
+sex_diff_tp_plot
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/sexdiff_hormones.png",
+  width = 7,
+  height = 5
+  )
+```
+
+```{r plot_sexdifference_tan}
+sex_diff_tan_plot <-
+  cd_clean %>% 
+  select(tan_per_cent, male, cort_clean:test_clean) %>% 
+  gather(hormone, value, cort_clean:test_clean) %>% 
+  mutate(
+    hormone = recode(
+      hormone,
+      cort_clean = "log Cortisol\n(µg/dL)",
+      dhea_clean = "log DHEA\n(pg/mL)",
+      test_clean = "log Testosterone\n(pg/mL)"
+    )
+  ) %>% 
+  ggplot(aes(tan_per_cent, value, color = male)) +
+  geom_point(alpha = 1/2, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+  scale_color_manual(
+    values = c("darkred", "darkblue"),
+    labels = c("Girls", "Boys")
+  ) +
+  theme_apa(box = TRUE) +
+  labs(
+    color = NULL,
+    x = expression("Panel B: "*Delta*" Pubertal stage (person-mean-centered)"),
+    y = NULL
+  ) +
+  facet_wrap(.~hormone, scales = "free") 
+
+sex_diff_tan_plot
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/sexdiff_hormones_tan.png",
+  width = 7,
+  height = 5
+  )
+
+plot_grid(sex_diff_tp_plot, sex_diff_tan_plot, rows = 2)
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/sexdiff_hormones_grid.png",
+  width = 7,
+  height = 7
+  )
+```
+
+## Primary analyses
+
+### Associations between DHEA and cortisol in earlier versus later puberty: Longitudinal change and between-person Tanner stage
+
+```{r mod1_base}
+contrasts(cd_clean$medication_binary) = c(-1, 1) # effect code medication
+contrasts(cd_clean$male) = c(-1, 1) # effect code sex
+
+mod1_base <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+summary(mod1_base)
+
+#confint.merMod(mod1_base, method = "boot")
+```
+
+```{r mod1_fit_time}
+# collection time_________________________________
+cd_clean_time <-
+  cd_clean %>% 
+  filter(!is.na(timecoll_av_t1t2))
+
+mod1_time <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+
+mod1_base_time <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+
+anova(mod1_time, mod1_base_time)
+
+# interaction with change in tanner
+
+mod1_base_timeX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+anova(mod1_time, mod1_base_timeX1)
+
+# interaction with mean tanner
+
+mod1_base_timeX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+anova(mod1_time, mod1_base_timeX2)
+```
+
+```{r mod1_fit_interval}
+# T1 to T2 interval________________________________
+cd_clean_interval <-
+  cd_clean %>% 
+  filter(!is.na(interval_yr))
+
+mod1_int <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+
+mod1_base_int <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(interval_yr) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+
+anova(mod1_int, mod1_base_int)
+
+# interaction with change in tanner
+
+mod1_base_intX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(interval_yr) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+anova(mod1_int, mod1_base_intX1)
+
+# interaction with mean tanner
+mod1_base_intX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2)  * scale(interval_yr) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+anova(mod1_int, mod1_base_intX2)
+```
+
+```{r mod1_fit_med}
+# medication________________________________
+mod1_med <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+    
+anova(mod1_base, mod1_med)
+
+# interaction with change in tanner
+mod1_medX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_base, mod1_medX1)
+
+# interaction with mean tanner
+mod1_medX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_base, mod1_medX2)
+```
+
+```{r mod1_fit_sex}
+# sex________________________________________
+mod1_sex <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_base, mod1_sex)
+
+# interaction with change in tanner
+mod1_sexX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_base, mod1_sexX1)
+
+# interaction with mean tanner
+mod1_sexX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * male +
+    scale(tanner_av_t1t2) * male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_sexX1, mod1_sexX2)
+
+# check results hold when controlling for interaction with sex -- YES 
+summary(mod1_sexX1)
+```
+
+```{r mod1_fit_bmi}
+# bmi T1______________________________________
+cd_clean_bmi <-
+  cd_clean %>% 
+  filter(!is.na(bmi_t1))
+
+mod1_bmi <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+
+mod1_base_bmi <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_bmi, mod1_base_bmi)
+
+# interaction with change in tanner
+mod1_base_bmiX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_bmi, mod1_base_bmiX1)
+
+# interaction with mean tanner
+mod1_base_bmiX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_bmi, mod1_base_bmiX2)
+```
+
+``` {r mod1_fit_age}
+# age________________________________________
+mod1_age <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_base, mod1_age)
+
+# interaction with change in tanner
+mod1_ageX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_base, mod1_ageX1)
+
+# interaction with mean tanner
+mod1_ageX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+   scale(tanner_av_t1t2) * scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_base, mod1_ageX2)
+```
+
+
+```{r mod1_corticosterid}
+cd_clean_nosteroid <-
+  cd_clean %>% 
+  filter(corticosteroid == 0)
+
+mod1_nosteroid <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_nosteroid
+)
+
+summary(mod1_nosteroid)
+
+#confint.merMod(t1t2_mod1_nosteroid, method = "boot")
+```
+
+```{r mod1_simple_effects}
+# larger increases
+mod1_fin_hi <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * I(scale(tan_per_cent) - sd(tan_per_cent, na.rm = TRUE)) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+summary(mod1_fin_hi)
+#confint.merMod(mod1_fin_hi, method = "boot")
+
+# smaller increases
+mod1_fin_lo <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * I(scale(tan_per_cent) + sd(tan_per_cent, na.rm = TRUE)) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+summary(mod1_fin_lo)
+#confint.merMod(mod1_fin_lo, method = "boot")
+```
+
+```{r mod1_boys}
+cd_clean_boys <-
+  cd_clean %>% 
+  filter(male == 1)
+
+mod1_boys_hi <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * I(scale(tan_per_cent) - sd(tan_per_cent, na.rm = TRUE)) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_boys
+)
+
+summary(mod1_boys_hi)
+#confint.merMod(mod1_boys_hi, method = "boot")
+
+mod1_boys_lo <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * I(scale(tan_per_cent) + sd(tan_per_cent, na.rm = TRUE)) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_boys
+)
+
+summary(mod1_boys_lo)
+#confint.merMod(mod1_boys_lo, method = "boot")
+```
+
+```{r mod1_girls}
+cd_clean_girls <-
+  cd_clean %>% 
+  filter(male == 0)
+
+mod1_girls <- lmer(
+  scale(cort_clean) ~ 
+    scale(dhea_clean) * scale(tan_per_cent) +
+    scale(dhea_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_girls
+)
+
+summary(mod1_girls)
+confint.merMod(mod1_girls, method = "boot")
+```
+
+```{r plot_mod1_sex_tp, warning=FALSE}
+plot_mod1_sex_tp <- 
+  cd_clean %>% 
+  ggplot(
+    aes(
+      dhea_clean,
+      cort_clean,
+      color = timepoint
+    )
+  ) + 
+  geom_point(size = 1.5, alpha = 1/2) +
+  geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+  scale_x_continuous(breaks = seq.int(1, 8, 1), expand = c(0, 1)) +
+  scale_y_continuous(breaks = seq.int(-4, 1, 1), expand = c(0, 1)) +
+  scale_color_manual(
+    values = c("darkblue", "darkred"),
+    labels = c("T1", expression("T2 (mean "*Delta*" Pubertal stage = 1.50)"))
+  ) +
+  theme_apa(box = TRUE) +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 12)
+  ) +
+  labs(
+    color = NULL,
+    x = "Panel A: log DHEA (pg/mL)",
+    y = "log Cortisol (µg/dL)"
+  ) +
+  facet_wrap(
+    .~ male, 
+    scales = "free",
+    labeller = labeller(male = c("0" = "Girls", "1" = "Boys"))
+  )
+
+plot_mod1_sex_tp
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/cort_dhea_tp_sex.png",
+  height = 4, width = 5
+)
+
+
+```
+### Associations between testosterone and cortisol in earlier versus later puberty: Longitudinal change and between-person Tanner stage
+
+```{r mod1_test_base}
+contrasts(cd_clean$medication_binary) = c(-1, 1) # effect code medication
+contrasts(cd_clean$male) = c(-1, 1) # effect code sex
+
+mod1_test_base <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+summary(mod1_test_base)
+
+#confint.merMod(mod1_test_base, method = "boot")
+```
+
+```{r mod1_test_fit_time}
+# collection time_________________________________
+cd_clean_time <-
+  cd_clean %>% 
+  filter(!is.na(timecoll_av_t1t2))
+
+mod1_test_time <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+
+mod1_test_base_time <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+
+anova(mod1_test_time, mod1_test_base_time)
+
+# interaction with change in tanner
+
+mod1_test_base_timeX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    tan_per_cent * scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+anova(mod1_test_time, mod1_test_base_timeX1)
+
+# interaction with mean tanner
+
+mod1_test_base_timeX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * scale(timecoll_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_time
+)
+anova(mod1_test_time, mod1_test_base_timeX2)
+```
+
+```{r mod1_test_fit_interval}
+# T1 to T2 interval________________________________
+cd_clean_interval <-
+  cd_clean %>% 
+  filter(!is.na(interval_yr))
+
+mod1_test_int <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+
+mod1_test_base_int <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(interval_yr) +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+
+anova(mod1_test_int, mod1_test_base_int)
+
+# interaction with change in tanner
+
+mod1_test_base_intX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * interval_yr +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+anova(mod1_test_int, mod1_test_base_intX1)
+
+# interaction with mean tanner
+mod1_test_base_intX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * interval_yr +
+    (1 | ELS_ID),
+  data = cd_clean_interval
+)
+anova(mod1_test_int, mod1_test_base_intX2)
+```
+
+```{r mod1_test_fit_med}
+# medication________________________________
+mod1_test_med <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+    
+anova(mod1_test_base, mod1_test_med)
+
+# interaction with change in tanner
+mod1_test_medX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_test_base, mod1_test_medX1)
+
+# interaction with mean tanner
+mod1_test_medX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * medication_binary +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_test_base, mod1_test_medX2)
+```
+
+```{r mod1_test_fit_sex}
+# sex________________________________________
+mod1_test_sex <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_test_base, mod1_test_sex)
+
+# interaction with change in tanner
+mod1_test_sexX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    tan_per_cent * male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_test_sex, mod1_test_sexX1)
+
+# interaction with mean tanner
+mod1_test_sexX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * male +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+anova(mod1_test_sex, mod1_test_sexX2)
+
+#check results hold when including sex -- NO, become marginal
+summary(mod1_test_sex)
+#confint.merMod(mod1_test_sex, method = "boot")
+```
+
+```{r mod1_test_fit_bmi}
+# bmi T1______________________________________
+cd_clean_bmi <-
+  cd_clean %>% 
+  filter(!is.na(bmi_t1))
+
+mod1_test_bmi <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+
+mod1_test_base_bmi <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_test_bmi, mod1_test_base_bmi)
+
+# interaction with change in tanner
+mod1_test_base_bmiX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_test_bmi, mod1_test_base_bmiX1)
+
+# interaction with mean tanner
+mod1_test_base_bmiX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * scale(bmi_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_bmi
+)
+    
+anova(mod1_test_bmi, mod1_test_base_bmiX2)
+```
+
+``` {r mod1_test_fit_age}
+# age________________________________________
+mod1_test_age <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_test_base, mod1_test_age)
+
+# interaction with change in tanner
+mod1_test_ageX1 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tan_per_cent) * scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_test_base, mod1_test_ageX1)
+
+# interaction with mean tanner
+mod1_test_ageX2 <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    scale(tanner_av_t1t2) * scale(age_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+
+anova(mod1_test_base, mod1_test_ageX2)
+```
+
+```{r mod1_test_corticosterid}
+cd_clean_nosteroid <-
+  cd_clean %>% 
+  filter(corticosteroid == 0)
+
+contrasts(cd_clean_nosteroid$timepoint) = c(0, 1) # T1 is baseline
+
+mod1_test_nosteroid <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_nosteroid
+)
+
+summary(mod1_test_nosteroid)
+
+#confint.merMod(t1t2_mod1_test_nosteroid, method = "boot")
+```
+
+```{r mod1_test_simple_effects}
+# later puberty
+mod1_test_fin_hi <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * I(scale(tanner_av_t1t2) - sd(tanner_av_t1t2, na.rm = TRUE)) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+summary(mod1_test_fin_hi)
+#confint.merMod(mod1_test_fin_hi, method = "boot")
+
+# earlier puberty
+mod1_test_fin_lo <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * I(scale(tanner_av_t1t2) + sd(tanner_av_t1t2, na.rm = TRUE)) +
+    (1 | ELS_ID),
+  data = cd_clean
+)
+summary(mod1_test_fin_lo)
+confint.merMod(mod1_test_fin_lo, method = "boot")
+```
+
+```{r mod1_test_boys, warning=FALSE }
+cd_clean_boys <-
+  cd_clean %>% 
+  filter(male == 1)
+
+mod1_test_boys_hi <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * I(scale(tanner_av_t1t2) - sd(tanner_av_t1t2, na.rm = TRUE)) +
+    (1 | ELS_ID),
+  data = cd_clean_boys
+)
+
+summary(mod1_test_boys_hi)
+#confint.merMod(mod1_test_boys_hi, method = "boot")
+
+mod1_test_boys_lo <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * I(scale(tanner_av_t1t2) + sd(tanner_av_t1t2, na.rm = TRUE)) +
+    (1 | ELS_ID),
+  data = cd_clean_boys
+)
+
+summary(mod1_test_boys_lo)
+confint.merMod(mod1_test_boys_lo, method = "boot")
+```
+
+```{r mod1_test_girls}
+cd_clean_girls <-
+  cd_clean %>% 
+  filter(male == 0)
+
+mod1_test_girls <- lmer(
+  scale(cort_clean) ~ 
+    scale(test_clean) * scale(tan_per_cent) +
+    scale(test_clean) * scale(tanner_av_t1t2) +
+    (1 | ELS_ID),
+  data = cd_clean_girls
+)
+
+summary(mod1_test_girls)
+#confint.merMod(mod1_test_girls, method = "boot")
+```
+
+```{r plot_mod1_test_sex, warning=FALSE}
+plot_mod1_test_sex <- 
+  cd_clean %>% 
+  filter(!is.na(tanner_av)) %>% 
+  ggplot(
+    aes(
+      test_clean,
+      cort_clean,
+      color = factor(ceiling(tanner_av) >= 3)
+    )
+  ) + 
+  geom_point(size = 1.5, alpha = 1/2) +
+  geom_smooth(method = "lm", se = FALSE, size = 1.5) +
+  scale_x_continuous(breaks = seq.int(1, 8, 1), expand = c(0, 1)) +
+  scale_y_continuous(breaks = seq.int(-4, 1, 1), expand = c(0, 1)) +
+  scale_color_manual(
+    values = c("darkblue", "darkred"),
+    labels = c("Pubertal stages 1-2", "Pubertal stages 3-5")
+  ) +
+  theme_apa(box = TRUE) +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 12)
+  ) +
+  labs(
+    color = NULL,
+    x = "Panel B: log Testosterone (pg/mL)",
+    y = "log Cortisol (µg/dL)"
+  ) +
+  facet_wrap(
+    .~ male, 
+    scales = "free",
+    labeller = labeller(male = c("0" = "Girls", "1" = "Boys"))
+  )
+
+plot_mod1_test_sex
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/cort_test_tan_sex.png",
+  height = 4, width = 5
+)
+
+plot_grid(plot_mod1_sex_tp, plot_mod1_test_sex, rows = 2)
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/cort_hormone_tan_sex_grid.png",
+  height = 7, width = 5
+)
+```
+
+## Association of longitudinal change and mean DHEA with cortisol 
+```{r mod2_base}
+mod2_base <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_base)
+
+#confint.merMod(mod2_base, method = "boot")
+```
+
+```{r mod2_fit_time}
+cd_clean_time <-
+  cd_clean %>% 
+  filter(!is.na(timecoll_av_t1t2))
+
+mod2_time_fit <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+mod2_time <-
+  lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      scale(timecoll_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_time_fit, mod2_time)
+
+mod2_timeX1 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(timecoll_av_t1t2) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_time_fit, mod2_timeX1)
+
+mod2_timeX2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) * scale(timecoll_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_time_fit, mod2_timeX2)
+```
+
+```{r mod2_fit_med}
+mod2_med <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      medication_binary +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_med)
+
+mod2_medX1 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * medication_binary +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_medX1)
+
+mod2_medX2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) * medication_binary +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_medX2)
+```
+
+
+``` {r mod2_fit_sex}
+mod2_sex <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      male +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_sex)
+
+mod2_sexX1 <-
+  lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * male + 
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_sexX1)
+
+mod2_sexX2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) * male + 
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_sexX2)
+```
+
+```{r mod2_fit_bmi}
+cd_clean_bmi <-
+  cd_clean %>% 
+  filter(!is.na(bmi_av_t1t2))
+
+mod2_bmi_fit <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+mod2_bmi <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      scale(bmi_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_bmi_fit, mod2_bmi)
+
+mod2_bmiX1 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(bmi_av_t1t2) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_bmi_fit, mod2_bmiX1)
+
+mod2_bmiX2 <-
+ lmer(
+     scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) * scale(bmi_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_bmi_fit, mod2_bmiX2)
+```
+
+```{r mod2_fit_age}
+mod2_age <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      scale(age_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_age)
+
+mod2_ageX1 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(age_av_t1t2) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_ageX1)
+
+mod2_ageX2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) * scale(age_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_base, mod2_ageX2)
+```
+
+```{r mod2_corticosterid}
+mod2_nosteroid_fit <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_nosteroid
+  )
+
+summary(mod2_nosteroid_fit)
+
+#confint.merMod(t1t2_mod1_test_nosteroid, method = "boot")
+```
+
+```{r mod2_boys}
+mod2_boys <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_boys)
+#confint.merMod(mod2_boys, method = "boot")
+```
+
+```{r mod2_girls}
+mod2_girls <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_girls)
+
+#confint.merMod(mod2_girls, method = "boot")
+```
+
+### DHEA/cort: Effects of ELS threat severity
+
+```{r mod2_threat}
+mod2_threat <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(sumsev_threat_t1) +
+      scale(dhea_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_threat)
+
+#confint.merMod(mod2_threat, method = "boot")
+```
+
+```{r mod2_threat_simple_effects}
+mod2_threat_hi <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * I(scale(sumsev_threat_t1) - sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      scale(dhea_av_t1t2) * I(scale(sumsev_threat_t1) - sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_threat_hi)
+
+#confint.merMod(mod2_threat_hi, method = "boot")
+
+mod2_threat_lo <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * I(scale(sumsev_threat_t1) + sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      scale(dhea_av_t1t2) * I(scale(sumsev_threat_t1) + sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_threat_lo)
+confint.merMod(mod2_threat, method = "boot")
+```
+
+```{r mod2_threat_t2}
+mod2_threat_t2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(sumsev_threat_t2) +
+      scale(dhea_av_t1t2) * scale(sumsev_threat_t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_threat_t2)
+```
+
+```{r mod2_threat_boys}
+mod2_threat_boys <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(sumsev_threat_t1) +
+      scale(dhea_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_threat_boys)
+
+#confint.merMod(mod2_threat_boys, method = "boot")
+
+# higher threat severity in boys________________________________________________
+mod2_threat_boys_hi <-
+   lmer(
+    cort_clean ~
+      scale(dhea_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(dhea_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_threat_boys_hi)
+
+mod2_threat_boys_hi_int <- summary(mod2_threat_boys_hi)$coefficients[1]
+mod2_threat_boys_hi_slp <- summary(mod2_threat_boys_hi)$coefficients[2]
+
+# lower threat severity in boys________________________________________________
+mod2_threat_boys_lo <-
+   lmer(
+    cort_clean ~
+      scale(dhea_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(dhea_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_threat_boys_lo)
+
+mod2_threat_boys_lo_int <- summary(mod2_threat_boys_lo)$coefficients[1]
+mod2_threat_boys_lo_slp <- summary(mod2_threat_boys_lo)$coefficients[2]
+```
+
+```{r mod2_threat_girls}
+mod2_threat_girls <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * scale(sumsev_threat_t1) +
+      scale(dhea_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_threat_girls)
+
+#confint.merMod(mod2_threat_girls, method = "boot")
+
+# higher threat severity in girls________________________________________________
+mod2_threat_girls_hi <-
+   lmer(
+    cort_clean ~
+      scale(dhea_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(dhea_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_threat_girls_hi)
+
+mod2_threat_girls_hi_int <- summary(mod2_threat_girls_hi)$coefficients[1]
+mod2_threat_girls_hi_slp <- summary(mod2_threat_girls_hi)$coefficients[2]
+
+# lower threat severity in girls________________________________________________
+mod2_threat_girls_lo <-
+   lmer(
+    cort_clean ~
+      scale(dhea_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(dhea_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_threat_girls_lo)
+
+mod2_threat_girls_lo_int <- summary(mod2_threat_girls_lo)$coefficients[1]
+mod2_threat_girls_lo_slp <- summary(mod2_threat_girls_lo)$coefficients[2]
+```
+
+
+```{r plot_mod2_sex}
+plot_mod2 <-
+  tibble(
+    Sex = c("Girls", "Boys", "Girls", "Boys"),
+    Threat = c("Higher (+1SD)", "Higher (+1SD)", "Lower (-1SD)", "Lower (-1SD)"),
+    Intercept = c(
+      mod2_threat_girls_hi_int, 
+      mod2_threat_boys_hi_int, 
+      mod2_threat_girls_lo_int, 
+      mod2_threat_boys_lo_int
+    ),
+    Slope = c(
+      mod2_threat_girls_hi_slp, 
+      mod2_threat_boys_hi_slp, 
+      mod2_threat_girls_lo_slp, 
+      mod2_threat_boys_lo_slp
+    )
+  )
+
+# produce a plot for legend only_______________________________________________
+plot_mod2_threat_legend <- 
+  cd_clean_boys %>% 
+  ggplot(aes(dhea_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2) +
+  geom_abline(
+    data = plot_mod2 %>% filter(Sex == "Boys"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-2, 2)) +
+  theme_apa(base_size = 20, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Boys",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = "log Cortisol (µg/dL)"
+  )  
+
+# plot for boys________________________________________________________________
+plot_mod2_threat_boys <- 
+  cd_clean_boys %>% 
+  ggplot(aes(dhea_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2, aes(size = sumsev_threat_t1, show.legend = FALSE)) +
+  geom_abline(
+    data = plot_mod2 %>% filter(Sex == "Boys"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-2, 2)) +
+  theme_apa(base_size = 20, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Boys",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = NULL
+  )  
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/dhea_cort_threat_boys.png",
+  height = 6, width = 10
+)
+
+# plot for girls________________________________________________________________
+plot_mod2_threat_girls <- 
+  cd_clean_girls %>% 
+  ggplot(aes(dhea_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2, aes(size = sumsev_threat_t1), show.legend = FALSE) +
+  geom_abline(
+    data = plot_mod2 %>% filter(Sex == "Girls"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-2, 2)) +
+  theme_apa(base_size = 20, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Girls",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = NULL
+  )  
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/dhea_cort_threat_girls.png",
+  height = 6, width = 10
+)
+
+# save together________________________________________________________________
+plot_mod2_threat_sex <- 
+  plot_grid(
+    plot_mod2_threat_girls + theme(legend.position = "none"),
+    plot_mod2_threat_boys + theme(legend.position = "none"), 
+    align = "hv", 
+    axis = "bt", 
+    rel_widths = c(1, 1)
+  ) 
+
+#create common x and y labels___________________________________________________
+library(grid)
+library(gridExtra)
+library(gridGraphics)
+
+y.grob_cort <- textGrob(
+  "log Cortisol (µg/dL)",
+  gp = gpar(col = "black", fontsize = 22), 
+  rot = 90
+)
+
+x.grob_dhea <- textGrob(
+  expression("Panel A: "*Delta*" log DHEA (pg/mL) (person-mean-centered)"),
+  gp = gpar(col = "black", fontsize = 22)
+)
+
+#add common labels to plot______________________________________________________
+plot_mod2_threat_sex <-
+  grid.arrange(
+  arrangeGrob(
+    plot_mod2_threat_sex, 
+    left = y.grob_cort, 
+    bottom = x.grob_dhea
+  )
+)
+
+# extract legend________________________________________________________________
+threat_legend <- get_legend(
+  # create some space to the left of the legend
+  plot_mod2_threat_legend + 
+    theme(
+      legend.box.margin = margin(0, 0, 0, 12)
+    )
+)
+
+# add legend back_______________________________________________________________
+# the width of one plot (via rel_widths).
+plot_grid(plot_mod2_threat_sex, threat_legend, rel_widths = c(1, .2))
+
+# save plot_____________________________________________________________________
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/dhea_cort_threat_sex.png", width = 12, height = 6)
+```
+
+
+## Association of longitudinal change and mean testosterone with cortisol 
+```{r mod2_test_base}
+mod2_test_base <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) +
+      scale(test_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_base)
+
+confint.merMod(mod2_test_base, method = "boot")
+```
+
+
+```{r mod2_test_fit_time}
+cd_clean_time <-
+  cd_clean %>% 
+  filter(!is.na(timecoll_av_t1t2))
+
+mod2_test_time_fit <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+mod2_test_time <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      timecoll_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_test_time_fit, mod2_test_time)
+
+mod2_test_timeX1 <-
+ lmer(
+    cort_clean ~
+      test_per_cent * timecoll_av_t1t2 +
+      test_av_t1t2 +
+      timecoll_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_test_time_fit, mod2_test_timeX1)
+
+mod2_test_timeX2 <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 * timecoll_av_t1t2 +
+      timecoll_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_time
+  )
+
+anova(mod2_test_time_fit, mod2_test_timeX2)
+```
+
+```{r mod2_test_fit_med}
+mod2_test_med <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      medication_binary +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_test_base, mod2_test_med)
+
+mod2_test_medX1 <-
+ lmer(
+    cort_clean ~
+      test_per_cent * medication_binary +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_test_base, mod2_test_medX1)
+
+mod2_test_medX2 <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 * medication_binary +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_test_base, mod2_test_medX2)
+```
+
+
+```{r mod2_test_fit_sex}
+mod2_test_sex <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      male +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_test_base, mod2_test_sex)
+
+mod2_test_sexX1 <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_sexX1)
+
+anova(mod2_test_base, mod2_test_sexX1)
+
+mod2_test_sexX2 <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 * male +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+
+anova(mod2_test_base, mod2_test_sexX2)
+```
+
+```{r mod2_test_fit_bmi}
+cd_clean_bmi <-
+  cd_clean %>% 
+  filter(!is.na(bmi_av_t1t2))
+
+mod2_test_bmi_fit <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+mod2_test_bmi <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      bmi_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_test_bmi_fit, mod2_test_bmi)
+
+mod2_test_bmiX1 <-
+ lmer(
+    cort_clean ~
+      test_per_cent * bmi_av_t1t2 +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_test_bmi_fit, mod2_test_bmiX1)
+
+mod2_test_bmiX2 <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 * bmi_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_bmi
+  )
+
+anova(mod2_test_bmi_fit, mod2_test_bmiX2)
+```
+
+```{r mod2_test_corticosterid}
+mod2_test_nosteroid_fit <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_nosteroid
+  )
+
+summary(mod2_test_nosteroid_fit)
+
+#confint.merMod(t1t2_mod1_test_nosteroid, method = "boot")
+```
+
+```{r mod2_test_boys}
+mod2_test_boys <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_test_boys)
+#confint.merMod(mod2_test_boys, method = "boot")
+```
+
+```{r mod2_test_girls}
+mod2_test_girls <-
+ lmer(
+    cort_clean ~
+      test_per_cent +
+      test_av_t1t2 +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_test_girls)
+
+confint.merMod(mod2_test_girls, method = "boot")
+```
+
+### Testosteron/cort: Effects of ELS threat severity
+
+```{r mod2_test_threat}
+mod2_test_threat <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * scale(sumsev_threat_t1) +
+      scale(test_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_threat)
+
+confint.merMod(mod2_test_threat, method = "boot")
+```
+
+```{r mod2_test_threat_simple_effects}
+mod2_test_threat_hi <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * I(scale(sumsev_threat_t1) - sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      scale(test_av_t1t2) * I(scale(sumsev_threat_t1) - sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_threat_hi)
+
+#confint.merMod(mod2_test_threat_hi, method = "boot")
+
+mod2_test_threat_lo <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * I(scale(sumsev_threat_t1) + sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      scale(test_av_t1t2) * I(scale(sumsev_threat_t1) + sd(scale(sumsev_threat_t1), na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_threat_lo)
+confint.merMod(mod2_test_threat, method = "boot")
+```
+
+```{r mod2_test_threat_t2}
+mod2_test_threat_t2 <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * scale(sumsev_threat_t2) +
+      scale(test_av_t1t2) * scale(sumsev_threat_t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_threat_t2)
+```
+
+```{r mod2_test_threat_boys}
+mod2_test_threat_boys <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * scale(sumsev_threat_t1) +
+      scale(test_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_test_threat_boys)
+
+#confint.merMod(mod2_test_threat_boys, method = "boot")
+
+# higher threat severity in boys________________________________________________
+mod2_test_threat_boys_hi <-
+   lmer(
+    cort_clean ~
+      scale(test_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(test_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_test_threat_boys_hi)
+
+mod2_test_threat_boys_hi_int <- summary(mod2_test_threat_boys_hi)$coefficients[1]
+mod2_test_threat_boys_hi_slp <- summary(mod2_test_threat_boys_hi)$coefficients[2]
+
+# lower threat severity in boys________________________________________________
+mod2_test_threat_boys_lo <-
+   lmer(
+    cort_clean ~
+      scale(test_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(test_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_boys
+  )
+summary(mod2_test_threat_boys_lo)
+
+mod2_test_threat_boys_lo_int <- summary(mod2_test_threat_boys_lo)$coefficients[1]
+mod2_test_threat_boys_lo_slp <- summary(mod2_test_threat_boys_lo)$coefficients[2]
+```
+
+```{r mod2_test_threat_girls}
+mod2_test_threat_girls <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * scale(sumsev_threat_t1) +
+      scale(test_av_t1t2) * scale(sumsev_threat_t1) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_test_threat_girls)
+
+#confint.merMod(mod2_test_threat_girls, method = "boot")
+
+# higher threat severity in girls________________________________________________
+mod2_test_threat_girls_hi <-
+   lmer(
+    cort_clean ~
+      scale(test_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(test_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) - sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_test_threat_girls_hi)
+
+mod2_test_threat_girls_hi_int <- summary(mod2_test_threat_girls_hi)$coefficients[1]
+mod2_test_threat_girls_hi_slp <- summary(mod2_test_threat_girls_hi)$coefficients[2]
+
+# lower threat severity in girls________________________________________________
+mod2_test_threat_girls_lo <-
+   lmer(
+    cort_clean ~
+      scale(test_per_cent, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      scale(test_av_t1t2, scale = FALSE) * I(scale(sumsev_threat_t1, scale = FALSE) + sd(sumsev_threat_t1, na.rm = TRUE)) +
+      (1 | ELS_ID),
+    data = cd_clean_girls
+  )
+summary(mod2_test_threat_girls_lo)
+
+mod2_test_threat_girls_lo_int <- summary(mod2_test_threat_girls_lo)$coefficients[1]
+mod2_test_threat_girls_lo_slp <- summary(mod2_test_threat_girls_lo)$coefficients[2]
+```
+
+```{r plot_mod2_test_sex}
+plot_mod2_test <-
+  tibble(
+    Sex = c("Girls", "Boys", "Girls", "Boys"),
+    Threat = c("Higher (+1SD)", "Higher (+1SD)", "Lower (-1SD)", "Lower (-1SD)"),
+    Intercept = c(
+      mod2_test_threat_girls_hi_int, 
+      mod2_test_threat_boys_hi_int, 
+      mod2_test_threat_girls_lo_int, 
+      mod2_test_threat_boys_lo_int
+    ),
+    Slope = c(
+      mod2_test_threat_girls_hi_slp, 
+      mod2_test_threat_boys_hi_slp, 
+      mod2_test_threat_girls_lo_slp, 
+      mod2_test_threat_boys_lo_slp
+    )
+  )
+
+# produce a plot for legend only_______________________________________________
+plot_mod2_test_threat_legend <- 
+  cd_clean_boys %>% 
+  ggplot(aes(test_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2) +
+  geom_abline(
+    data = plot_mod2_test %>% filter(Sex == "Boys"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-1, 1)) +
+  theme_apa(base_size = 20, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Boys",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = "log Cortisol (µg/dL)"
+  )  
+
+# plot for boys________________________________________________________________
+plot_mod2_test_threat_boys <- 
+  cd_clean_boys %>% 
+  ggplot(aes(test_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2, aes(size = sumsev_threat_t1, show.legend = FALSE)) +
+  geom_abline(
+    data = plot_mod2_test %>% filter(Sex == "Boys"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-1, 1)) +
+  theme_apa(base_size = 20, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Boys",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = NULL
+  )  
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/test_cort_threat_boys.png",
+  height = 6, width = 10
+)
+
+# plot for girls________________________________________________________________
+plot_mod2_test_threat_girls <- 
+  cd_clean_girls %>% 
+  ggplot(aes(test_per_cent, cort_clean)) +
+  geom_point(alpha = 1/2, aes(size = sumsev_threat_t1), show.legend = FALSE) +
+  geom_abline(
+    data = plot_mod2_test %>% filter(Sex == "Girls"),
+    aes(
+      intercept = Intercept,
+      slope = Slope,
+      color = Threat
+    ),
+    size = 2
+  ) +
+  scale_x_continuous(breaks = seq.int(-4, 4, 1)) +
+  scale_color_manual(
+    values = c("darkred", "darkblue")
+  ) +
+  expand_limits(y = c(-1, -4)) +
+  expand_limits(x = c(-1, 1)) +
+  theme_apa(base_size = 24, box = TRUE) +
+  theme(
+    plot.title = element_text(hjust = .5)
+  ) +
+  labs(
+    title = "Girls",
+    shape = NULL,
+    size = NULL,
+    color = "Threat severity",
+    x = NULL,
+    y = NULL
+  )  
+
+ggsave(
+  "~/Box/lucy_king_files/ELS/cort_dhea/test_cort_threat_girls.png",
+  height = 6, width = 10
+)
+
+# save together________________________________________________________________
+plot_mod2_test_threat_sex <- 
+  plot_grid(
+    plot_mod2_test_threat_girls + theme(legend.position = "none"),
+    plot_mod2_test_threat_boys + theme(legend.position = "none"), 
+    align = "hv", 
+    axis = "bt", 
+    rel_widths = c(1, 1)
+  ) 
+
+#create common x and y labels___________________________________________________
+y.grob_cort <- textGrob(
+  "log Cortisol (µg/dL)",
+  gp = gpar(col = "black", fontsize = 22), 
+  rot = 90
+)
+
+x.grob_test <- textGrob(
+  expression("Panel B: "*Delta*" log testosterone (pg/mL) (person-mean-centered)"),
+  gp = gpar(col = "black", fontsize = 22)
+)
+
+#add common labels to plot______________________________________________________
+plot_mod2_test_threat_sex <-
+  grid.arrange(
+  arrangeGrob(
+    plot_mod2_test_threat_sex, 
+    left = y.grob_cort, 
+    bottom = x.grob_test
+  )
+)
+
+# extract legend________________________________________________________________
+threat_legend <- get_legend(
+  # create some space to the left of the legend
+  plot_mod2_test_threat_legend + 
+    theme(
+      legend.box.margin = margin(0, 0, 0, 12)
+    )
+)
+
+# add legend back_______________________________________________________________
+# the width of one plot (via rel_widths).
+plot_grid(plot_mod2_test_threat_sex, threat_legend, rel_widths = c(1, .2))
+
+# save plot_____________________________________________________________________
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/test_cort_threat_sex.png", width = 12, height = 6)
+
+# save DHEA and testosterone plots together
+plot_mod2 <-
+  grid.arrange(plot_mod2_threat_sex, plot_mod2_test_threat_sex)
+
+plot_grid(
+  plot_mod2,
+  threat_legend,
+  rows = 2,
+  rel_heights = c(5, 1)
+)
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/hormones_cort_threat_sex.png", width = 10, height = 12)
+```
+
+## Supplementary analyses
+
+### Distinguishing testosterone and DHEA
+```{r}
+mod2_dhea_test <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) +
+      scale(test_av_t1t2) +
+      scale(dhea_per_cent) +
+      scale(dhea_av_t1t2) +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_dhea_test)
+```
+
+## Effects of non-threat-related ELS
+```{r mod2_nonthreat}
+cd_clean <-
+  cd_clean %>% 
+  mutate(
+    sumsev_nonthreat = sumsev_type_t1 - sumsev_threat_t1
+  )
+
+mod2_nonthreat <-
+ lmer(
+    scale(cort_clean) ~
+      scale(dhea_per_cent) * sumsev_nonthreat +
+      scale(dhea_av_t1t2) * sumsev_nonthreat +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_nonthreat)
+
+mod2_test_nonthreat <-
+ lmer(
+    scale(cort_clean) ~
+      scale(test_per_cent) * sumsev_nonthreat +
+      scale(test_av_t1t2) * sumsev_nonthreat +
+      (1 | ELS_ID),
+    data = cd_clean
+  )
+summary(mod2_test_nonthreat)
+```

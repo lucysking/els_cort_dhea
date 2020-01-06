@@ -1,7 +1,0 @@
-"0","ggplot(bechdel_df, aes(sqrt_domgross_adj, fill = success)) + "
-"0","  geom_histogram() +"
-"0","    labs("
-"0","     title = ""Distribution of domestic gross of films"","
-"0","      x = ""Square Root of Domestic Gross (Adjusted to 2013 Inflation Rates)"""
-"0","    ) +"
-"0","  geom_vline(aes(xintercept = bechdelSummary$mean_sqrt_domgross_adj + bechdelSummary$sd_sqrt_domgross_adj))"

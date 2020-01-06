@@ -1,5 +1,0 @@
-"0","finaldata %>% "
-"0","  ggplot(aes(x= share_non_white, y= avg_hatecrimes_per_100k_fbi)) +"
-"0","geom_point()  +"
-"0","  geom_smooth(method = lm) +"
-"0","  labs(title = ""Undetermined relationship between rate of diversity and rate of hate crimes"", x= ""Share of the population that is not white"", y = ""Average hate crimes per population of 100k"")"

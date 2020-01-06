@@ -1,7 +1,0 @@
-"0","#Libaries"
-"0","#Load the packages you need here"
-"0","library(tidyverse)"
-"0","library(BayesFactor)"
-"0","#Files"
-"0","#data_file <- ""/Users/Daphne/Documents/Stanford University/Freshman Year/Winter/Stats 60/Olympic Games/summer.csv"""
-"0","data_file <- ""https://raw.githubusercontent.com/lucysking/psych10-projects/master/project_datasets/olympic-games/summer.csv"""

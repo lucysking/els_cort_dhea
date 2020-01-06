@@ -1,9 +1,0 @@
-"0","```r
-```r
-data_wf %>% 
-  count(!is.na(sens_M), !is.na(sleep_time_sd)) %>% 
-  mutate(
-    per = n / sum(n)
-  )
-```
-```"
