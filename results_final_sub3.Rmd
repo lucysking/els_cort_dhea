@@ -168,6 +168,13 @@ cd_clean %>%
 # distinct IDs at either timepoint  
 cd_clean %>% 
   summarise(n_distinct(ELS_ID))
+
+distinct_IDs_all <- 
+  cd_clean %>% 
+  distinct(ELS_ID) %>% 
+  mutate(
+    included = 1
+  )
 ```
 
 ```{r missing_data_compare, }
@@ -227,7 +234,7 @@ cd_wf_clean %>%
     x = "T1 to T2 interval (years)"
   )
 
-ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/interval_dist.png", width = 7, height = 5)
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/interval_dist.png", width = 7, height = 5)
 ```
 
 
@@ -245,7 +252,7 @@ cd_clean %>%
     x = "Tanner stage"
   )
 
-ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/tanner_dist.png", width = 7, height = 5)
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/tanner_dist.png", width = 7, height = 5)
 
 cd_wf_clean %>% 
   ggplot(aes(tan_diff)) +
@@ -255,7 +262,7 @@ cd_wf_clean %>%
     x = "Change in Tanner stage from T1 to T2"
   )
 
-ggsave("~/Box/lucy_king_files/ELS/cort_dhea/cort_dhea_sync/tanner_change.png", width = 7, height = 5)
+ggsave("~/Box/lucy_king_files/ELS/cort_dhea/tanner_change.png", width = 7, height = 5)
 
 cd_clean %>% 
   filter(tan_diff == 0) %>% 
@@ -685,6 +692,8 @@ cor.test(cd_wf_clean$cort_clean_t2, cd_wf_clean$tanner_t2)
 
 ## Sample characteristics
 ```{r time_ttests}
+t.test(cd_wf_clean$child_age_t1, cd_wf_clean$child_age_t2, paired = TRUE)
+
 t.test(cd_wf_clean$tanner_t2, cd_wf_clean$tanner_t1, paired = TRUE)
 
 t.test(cd_wf_clean$bmi_t2, cd_wf_clean$bmi_t1, paired = TRUE)
@@ -3012,4 +3021,8 @@ mod2_test_nonthreat <-
     data = cd_clean
   )
 summary(mod2_test_nonthreat)
+
+glimpse(cd_clean)
+
+write_csv(cd_clean, "~/Box/lucy_king_files/ELS/cort_dhea/data/data_final/els_cort_hormones_final.csv")
 ```
