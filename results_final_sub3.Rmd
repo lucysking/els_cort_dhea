@@ -1007,8 +1007,8 @@ ggsave(
 ### Associations between DHEA and cortisol in earlier versus later puberty: Longitudinal change and between-person Tanner stage
 
 ```{r mod1_base}
-contrasts(cd_clean$medication_binary) = c(-1, 1) # effect code medication
-contrasts(cd_clean$male) = c(-1, 1) # effect code sex
+contrasts(cd_clean$medication_binary) = c(-.5, .5) # effect code medication
+contrasts(cd_clean$male) = c(-.5, .5) # effect code sex
 
 mod1_base <- lmer(
   scale(cort_clean) ~ 

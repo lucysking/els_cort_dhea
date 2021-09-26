@@ -1,9 +1,9 @@
 {
-    "path" : "~/Box/lucy_king_files/ELS/cort_dhea/old_scripts/els_cort_dhea",
-    "sortOrder" : [
+    "path": "~/Desktop/ELS/els_cort_dhea",
+    "sortOrder": [
         {
-            "ascending" : false,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": false
         }
     ]
 }
